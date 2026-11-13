@@ -1,6 +1,6 @@
 # Simulador HFC Pro
 
-**Versão Prévia 0.25** · by BRENDLER™
+**Versão Prévia 0.28** · by BRENDLER™
 
 Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
@@ -9,7 +9,7 @@ Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no 
 ## O que ele faz
 
 - Monta a instalação a partir de um **TAP Rede externa** (2, 4 ou 8 vias) ou de um **DG** (4 vias, só RG6 Branco).
-- Passivos: divisores 1/2, 1/3, 1/3D, 1/4, 1/8, DCs 6, 9, 12, 16, 20, **CABLE ISOLATOR** e **MINI ISOLATOR**.
+- Passivos: divisores 1/2, 1/3, 1/3D, 1/4, 1/8, DCs 6, 9, 12, 16, 20, **CABLE ISOLATOR**, **MINI ISOLATOR** e **TRAVA LOCK** (toda saída de passivo sem cabo precisa de TRAVA LOCK; o simulador alerta).
 - Cabos RG6 Branco, RG6 Preto e RG11 (RG11 só no cabo de entrada acima de 80 m).
 - Calcula CA, CB, RX e TX em cada EMTA, Decoder e Box TV e compara com o padrão: TX 38 a 51, RX −12 a 12, CA e CB ≥ 0 (dBmV).
 - Alerta de TX na origem: TAP 36 a 43, DG 37 a 43.
