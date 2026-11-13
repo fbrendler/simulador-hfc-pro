@@ -160,7 +160,7 @@
     <div class="flex items-center gap-3">
       <svg viewBox="200 30 740 910" class="h-9 w-auto shrink-0"  aria-label="Brendler" role="img"><circle cx="266" cy="143" r="51" fill="var(--logo-main)"/><circle cx="266" cy="512" r="51" fill="var(--logo-main)"/><circle cx="266" cy="880" r="51" fill="var(--logo-main)"/><circle cx="389" cy="143" r="51" fill="var(--logo-main)"/><circle cx="389" cy="512" r="51" fill="var(--logo-main)"/><circle cx="389" cy="880" r="51" fill="var(--logo-main)"/><circle cx="512" cy="143" r="51" fill="var(--logo-main)"/><circle cx="512" cy="512" r="51" fill="var(--logo-main)"/><circle cx="512" cy="880" r="51" fill="var(--logo-main)"/><circle cx="635" cy="143" r="51" fill="var(--logo-main)"/><circle cx="635" cy="512" r="51" fill="var(--logo-main)"/><circle cx="635" cy="880" r="51" fill="var(--logo-main)"/><circle cx="266" cy="266" r="51" fill="var(--logo-main)"/><circle cx="266" cy="389" r="51" fill="var(--logo-main)"/><circle cx="266" cy="635" r="51" fill="var(--logo-main)"/><circle cx="266" cy="758" r="51" fill="var(--logo-main)"/><circle cx="758" cy="266" r="51" fill="var(--logo-accent)"/><circle cx="758" cy="389" r="51" fill="var(--logo-main)"/><circle cx="758" cy="635" r="51" fill="var(--logo-main)"/><circle cx="758" cy="758" r="51" fill="var(--logo-accent)"/><circle cx="886" cy="87" r="36" fill="var(--logo-accent)"/></svg>
       <div>
-        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.20</span></h1>
+        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.21</span></h1>
         <p id="brand-sub" class="text-[10px] text-slate-400 font-medium">Projeto de TV & Banda Larga Coaxial · <b class="text-slate-300 tracking-wide">by BRENDLER™</b> <span id="autosave-status" class="text-slate-500 ml-1"></span></p>
       </div>
     </div>
@@ -271,7 +271,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.20';   // Versão Prévia
+    const APP_VERSION = '0.21';   // Versão Prévia
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
     // --- STATE VARIABLES ---
@@ -553,6 +553,7 @@
       const emb = loadEmbedded();
       if (emb) { autosaveKey = AUTOSAVE_KEY + '.' + emb.id; scenariosKey = SCEN_KEY + '.' + emb.id; }
       loadUserScenarios(emb);
+      loadActiveScenario();
       const saved = loadAutosave();
       if (emb && !(saved && saved.savedAt > emb.savedAt)) {
         applyLoadedState(emb.state);
@@ -2855,6 +2856,7 @@
       if (history.length > 150) history.shift();
       histIndex = history.length - 1;
       autosave(st);
+      syncActiveScenario(st);
       updateUndoButtons();
     }
     function restoreState(st) {
@@ -3080,11 +3082,53 @@
       } catch (err) { /* ignora */ }
       userScenarios = emb && Array.isArray(emb.scenarios) ? emb.scenarios : [];
     }
+    let activeScenarioId = null;   // cenário do usuário aberto (as alterações ficam salvas nele)
+    function setActiveScenario(id) {
+      activeScenarioId = id || null;
+      try { localStorage.setItem(scenariosKey + '.ativo', activeScenarioId || ''); } catch (err) { /* ignora */ }
+    }
+    function loadActiveScenario() {
+      try { const id = localStorage.getItem(scenariosKey + '.ativo'); activeScenarioId = userScenarios.some(x => x.id === id) ? id : null; } catch (err) { activeScenarioId = null; }
+    }
+    function syncActiveScenario(st) {
+      if (!activeScenarioId) return;
+      const sc = userScenarios.find(x => x.id === activeScenarioId);
+      if (!sc) { activeScenarioId = null; return; }
+      sc.state = JSON.parse(st);
+      sc.savedAt = Date.now();
+      saveUserScenarios();
+    }
     function saveUserScenarios() {
       try { localStorage.setItem(scenariosKey, JSON.stringify(userScenarios)); } catch (err) { /* ignora */ }
     }
     // Cenário+: guarda o projeto atual já organizado (o mapa atual não muda)
+    // Cenário+: cria um cenário novo em branco e abre para montar; tudo o que for feito fica salvo nele
     function addScenario() {
+      closeMenus();
+      flushCommit();
+      const name = nextScenarioName();
+      const id = uid('cen');
+      userScenarios.push({ id, name, savedAt: Date.now(), state: { limits: { ...limits }, nodes: [], connections: [] } });
+      saveUserScenarios();
+      setActiveScenario(id);
+      closeLengthPopup();
+      selection.clear();
+      selectedNodeId = null;
+      selectedConnectionId = null;
+      linkSource = null;
+      nodes = [];
+      connections = [];
+      document.getElementById('properties-panel').classList.add('hidden');
+      activeCategory = 'origem';   // começa pela origem (TAP ou DG)
+      savePrefs();
+      renderDock();
+      view = { zoom: 1, x: 0, y: 0 };
+      applyView();
+      refresh();
+      showToast(`${name} criado em branco. Comece pela Origem (TAP ou DG); tudo o que você montar fica salvo nele.`, 'success');
+    }
+    // Guarda o mapa atual (já organizado) como um cenário novo
+    function saveMapAsScenario() {
       closeMenus();
       if (!nodes.length) { showToast('O mapa está vazio: monte um projeto antes de salvar como cenário.', 'warning'); return; }
       flushCommit();
@@ -3095,7 +3139,7 @@
       const name = nextScenarioName();
       userScenarios.push({ id: uid('cen'), name, savedAt: Date.now(), state: st });
       saveUserScenarios();
-      showToast(`Projeto salvo como "${name}". Abra quando quiser em Cenários.`, 'success');
+      showToast(`Mapa salvo como "${name}". Abra quando quiser em Cenários.`, 'success');
     }
     function nextScenarioName() {
       const used = new Set(userScenarios.map(x => x.name));
@@ -3113,8 +3157,9 @@
       limits = { ...DEFAULT_LIMITS };
       if (st.limits) Object.keys(DEFAULT_LIMITS).forEach(k => { const v = Number(st.limits[k]); if (!isNaN(v) && k !== 'margin') limits[k] = v; });
       normalizeProject();
+      setActiveScenario(sc.id);
       openScenarioView();
-      showToast(`${sc.name} aberto. Ctrl+Z desfaz.`, 'info');
+      showToast(`${sc.name} aberto. As alterações ficam salvas nele.`, 'info');
     }
     function renameScenario(id) {
       const sc = userScenarios.find(x => x.id === id);
@@ -3129,6 +3174,7 @@
       const sc = userScenarios.find(x => x.id === id);
       if (!sc || !window.confirm(`Excluir "${sc.name}"?`)) return;
       userScenarios = userScenarios.filter(x => x.id !== id);
+      if (activeScenarioId === id) setActiveScenario(null);
       saveUserScenarios();
       renderScenarioMenu();
       showToast(`"${sc.name}" excluído.`, 'info');
@@ -3147,7 +3193,7 @@
         <div class="flex items-center gap-1 rounded-lg hover:bg-slate-800">
           <button data-id="${esc(sc.id)}" onclick="openUserScenario(this.dataset.id)" class="flex-1 min-w-0 text-left px-2 py-1.5 flex items-center gap-2.5">
             ${num(i + 3)}
-            <span class="min-w-0"><b class="block text-xs text-slate-100 truncate">${esc(sc.name)}</b><span class="block text-[10px] text-slate-400 truncate">${sc.state.nodes.length} componentes · salvo em ${new Date(sc.savedAt).toLocaleDateString('pt-BR')}</span></span>
+            <span class="min-w-0"><b class="block text-xs text-slate-100 truncate">${esc(sc.name)}${sc.id === activeScenarioId ? ' <span class="ml-1 text-[9px] font-bold uppercase text-violet-300 bg-violet-950 border border-violet-700/60 rounded px-1">aberto</span>' : ''}</b><span class="block text-[10px] text-slate-400 truncate">${sc.state.nodes.length ? sc.state.nodes.length + ' componentes' : 'em branco'} · salvo em ${new Date(sc.savedAt).toLocaleDateString('pt-BR')}</span></span>
           </button>
           <button data-id="${esc(sc.id)}" onclick="renameScenario(this.dataset.id)" title="Renomear" class="shrink-0 w-8 h-8 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-700"><i class="fa-solid fa-pen text-[11px]"></i></button>
           <button data-id="${esc(sc.id)}" onclick="deleteScenario(this.dataset.id)" title="Excluir" class="shrink-0 w-8 h-8 mr-1 rounded-md text-rose-400 hover:text-rose-300 hover:bg-slate-700"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
@@ -3155,8 +3201,9 @@
       m.innerHTML = `
         <button onclick="addScenario()" class="w-full text-left px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white flex items-center gap-2.5">
           <i class="fa-solid fa-folder-plus"></i>
-          <span class="min-w-0"><b class="block text-xs">Cenário+ · salvar este mapa</b><span class="block text-[10px] text-violet-100">Vira o ${esc(nextScenarioName())}, já organizado</span></span>
+          <span class="min-w-0"><b class="block text-xs">Cenário+ · novo cenário em branco</b><span class="block text-[10px] text-violet-100">Cria o ${esc(nextScenarioName())}; tudo o que você montar fica salvo nele</span></span>
         </button>
+        ${nodes.length ? `<button onclick="saveMapAsScenario()" class="w-full text-left mt-1 px-3 py-1.5 rounded-lg hover:bg-slate-800 text-[11px] text-slate-300 flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-slate-400"></i> ou salvar o mapa atual como cenário</button>` : ''}
         <div class="mt-1 pt-1 border-t border-slate-800 space-y-0.5">
           ${example(1, 'Cenário 1', 'DG · DC 9 · divisor 1/2 · mini isolators', 'loadScenario1')}
           ${example(2, 'Cenário 2', 'TAP 4 vias · cable isolator · DC 9 · 1/3D', 'loadScenario2')}
@@ -3489,6 +3536,7 @@
     }
 
     function loadScenario1() {
+      setActiveScenario(null);
       nodes = [
         { id: 'tap', type: 'tap', model: 'dg', name: 'DG', vias: 4, x: 24, y: 90, signals: { ca: 15.0, cb: 13.0, rx: 11.0, tx: 41.0 } },
         { id: 'dc9', type: 'dc9', name: 'DC 9 dB', x: 290, y: 200, signals: {} },
@@ -3510,6 +3558,7 @@
     }
 
     function loadScenario2() {
+      setActiveScenario(null);
       nodes = [
         { id: 'tap', type: 'tap', name: tapName(4), vias: 4, x: 24, y: 90, signals: { ca: 18.0, cb: 15.0, rx: 13.0, tx: 39.0 } },
         { id: 'dc9', type: 'dc9', name: 'DC 9 dB', x: 290, y: 200, signals: {} },
@@ -3856,6 +3905,7 @@
             limits = { ...DEFAULT_LIMITS };
             if (parsed.limits) Object.keys(DEFAULT_LIMITS).forEach(k => { const v = Number(parsed.limits[k]); if (!isNaN(v) && k !== 'margin') limits[k] = v; });
             const dropped = normalizeProject();
+            setActiveScenario(null);
             resetView();
             showToast(dropped ? `Projeto importado. ${dropped} cabo(s) inválido(s) foram descartados.` : 'Projeto JSON importado com sucesso!', dropped ? 'warning' : 'success');
           } else {

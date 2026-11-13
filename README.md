@@ -1,6 +1,6 @@
 # Simulador HFC Pro
 
-**Versão Prévia 0.20** · by BRENDLER™
+**Versão Prévia 0.21** · by BRENDLER™
 
 Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
@@ -14,7 +14,7 @@ Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no 
 - Calcula CA, CB, RX e TX em cada EMTA, Decoder e Box TV e compara com o padrão: TX 38 a 51, RX −12 a 12, CA e CB ≥ 0 (dBmV).
 - Alerta de TX na origem: TAP 36 a 43, DG 37 a 43.
 - Sugestões de correção testadas no projeto (só aparecem as que funcionam).
-- Cenários, relatório técnico com desenho da topologia, salvar como JSON ou como HTML offline com o projeto dentro.
+- Cenários (Cenário+ cria um cenário em branco que salva sozinho), relatório técnico com desenho da topologia, salvar como JSON ou como HTML offline com o projeto dentro.
 
 ## Reportar bug ou falar com o autor
 
