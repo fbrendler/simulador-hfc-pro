@@ -1,6 +1,6 @@
 # Simulador HFC Pro
 
-**Versão Prévia 0.19** · by BRENDLER™
+**Versão Prévia 0.20** · by BRENDLER™
 
 Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
