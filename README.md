@@ -1,6 +1,6 @@
 # Simulador HFC Pro
 
-**Versão Prévia 0.28** · by BRENDLER™
+**Versão Prévia 0.29** · by BRENDLER™
 
 Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
@@ -15,6 +15,8 @@ Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no 
 - Alerta de TX na origem: TAP 36 a 43, DG 37 a 43.
 - Sugestões de correção testadas no projeto (só aparecem as que funcionam).
 - Cenários (Cenário+ cria um cenário em branco que salva sozinho), relatório técnico com desenho da topologia, salvar como JSON ou como HTML offline com o projeto dentro.
+
+- **Modo GPON / XGS-PON** (chave no topo): CTO 8/16 portas com potência em dBm, divisor 1:2 (3,5 dB), drop com metros + conectores, cordão óptico (1,0 a 1,6 dB) e ONT/ONU com MÍN e MÁX; OK de −8 a −25 dBm, atenção até −27.
 
 ## Reportar bug ou falar com o autor
 

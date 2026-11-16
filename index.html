@@ -164,13 +164,17 @@
     <div class="flex items-center gap-3">
       <svg viewBox="200 30 740 910" class="h-9 w-auto shrink-0"  aria-label="Brendler" role="img"><circle cx="266" cy="143" r="51" fill="var(--logo-main)"/><circle cx="266" cy="512" r="51" fill="var(--logo-main)"/><circle cx="266" cy="880" r="51" fill="var(--logo-main)"/><circle cx="389" cy="143" r="51" fill="var(--logo-main)"/><circle cx="389" cy="512" r="51" fill="var(--logo-main)"/><circle cx="389" cy="880" r="51" fill="var(--logo-main)"/><circle cx="512" cy="143" r="51" fill="var(--logo-main)"/><circle cx="512" cy="512" r="51" fill="var(--logo-main)"/><circle cx="512" cy="880" r="51" fill="var(--logo-main)"/><circle cx="635" cy="143" r="51" fill="var(--logo-main)"/><circle cx="635" cy="512" r="51" fill="var(--logo-main)"/><circle cx="635" cy="880" r="51" fill="var(--logo-main)"/><circle cx="266" cy="266" r="51" fill="var(--logo-main)"/><circle cx="266" cy="389" r="51" fill="var(--logo-main)"/><circle cx="266" cy="635" r="51" fill="var(--logo-main)"/><circle cx="266" cy="758" r="51" fill="var(--logo-main)"/><circle cx="758" cy="266" r="51" fill="var(--logo-accent)"/><circle cx="758" cy="389" r="51" fill="var(--logo-main)"/><circle cx="758" cy="635" r="51" fill="var(--logo-main)"/><circle cx="758" cy="758" r="51" fill="var(--logo-accent)"/><circle cx="886" cy="87" r="36" fill="var(--logo-accent)"/></svg>
       <div>
-        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.28</span></h1>
-        <p id="brand-sub" class="text-[10px] text-slate-400 font-medium">Projeto de TV & Banda Larga Coaxial · <b class="text-slate-300 tracking-wide">by BRENDLER™</b> <span id="autosave-status" class="text-slate-500 ml-1"></span></p>
+        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.29</span></h1>
+        <p id="brand-sub" class="text-[10px] text-slate-400 font-medium"><span id="brand-mode">Projeto de TV & Banda Larga Coaxial</span> · <b class="text-slate-300 tracking-wide">by BRENDLER™</b> <span id="autosave-status" class="text-slate-500 ml-1"></span></p>
       </div>
     </div>
 
     <!-- Presets & Ações Globais -->
     <div class="flex items-center gap-2">
+      <div id="mode-switch" class="flex rounded-lg border border-slate-700 overflow-hidden text-[11px] font-bold mr-1" title="Tipo de projeto: HFC (coaxial) ou GPON / XGS-PON (fibra)">
+        <button id="mode-hfc" onclick="setProjectMode('hfc')" class="px-2.5 py-1.5 bg-sky-600 text-white"><i class="fa-solid fa-tv mr-1"></i>HFC</button>
+        <button id="mode-gpon" onclick="setProjectMode('gpon')" class="px-2.5 py-1.5 border-l border-slate-700 bg-slate-800 text-slate-300"><i class="fa-solid fa-lightbulb mr-1"></i>GPON / XGS-PON</button>
+      </div>
       <div class="flex items-center gap-1 mr-1">
         <button id="undo-btn" onclick="undo()" title="Desfazer (Ctrl+Z)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-rotate-left"></i></button>
         <button id="redo-btn" onclick="redo()" title="Refazer (Ctrl+Y)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-rotate-right"></i></button>
@@ -275,7 +279,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.28';   // Versão Prévia
+    const APP_VERSION = '0.29';   // Versão Prévia
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
     // --- STATE VARIABLES ---
@@ -284,6 +288,8 @@
     let selectedNodeId = null;
     let selectedConnectionId = null;
     let activeCableType = 'RG6';
+    let projectMode = 'hfc';        // 'hfc' (coaxial) ou 'gpon' (fibra GPON / XGS-PON)
+    const isGpon = () => projectMode === 'gpon';
     let linkSource = null;          // { nodeId, portId } enquanto um cabo está sendo puxado
     let drag = null;
     let pendingConn = null;         // ligação aguardando a distância no pop-up
@@ -411,12 +417,23 @@
         };
       });
     })();
-    const CARD_W = { tap: 240, modem: 256, tv: 240, box: 240 };
+    // GPON: divisor óptico 1:2 (PLC)
+    passiveLosses.spl12 = { out: 3.5 };
+    NODE_DEFS.spl12 = {
+      label: 'Divisor 1:2', w: 150, vbW: 140, vbH: 90,
+      in: { x: 70, y: 6, dir: 'up' },
+      outs: [
+        { id: 'out1', label: 'OUT 1', x: 40,  y: 84, dir: 'down', loss: 3.5 },
+        { id: 'out2', label: 'OUT 2', x: 100, y: 84, dir: 'down', loss: 3.5 }
+      ]
+    };
+    const CARD_W = { tap: 240, modem: 256, tv: 240, box: 240, ont: 240 };
     // Equipamentos do cliente (pontos finais)
     const EQUIP = {
       modem: { label: 'EMTA',       name: 'EMTA F@st3896', sub: 'Modem DOCSIS 3.1', icon: 'fa-wifi', color: 'text-sky-400' },
       tv:    { label: 'Decoder 4K', name: 'Decoder',       sub: 'Ponto de TV 4K',   icon: 'fa-tv',   color: 'text-amber-400' },
-      box:   { label: 'Box TV',     name: 'Box TV',        sub: 'Ponto de TV Box',  icon: 'fa-cube', color: 'text-violet-400' }
+      box:   { label: 'Box TV',     name: 'Box TV',        sub: 'Ponto de TV Box',  icon: 'fa-cube', color: 'text-violet-400' },
+      ont:   { label: 'ONT/ONU',    name: 'ONT',           sub: 'GPON / XGS-PON',   icon: 'fa-wifi', color: 'text-emerald-400' }
     };
     const DIR = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
@@ -441,7 +458,9 @@
     const isLock = t => t === 'lock';
     const TAP_VIAS = [2, 4, 8];
     const isDG = n => !!n && n.type === 'tap' && n.model === 'dg';
-    const tapVias = n => isDG(n) ? 4 : (TAP_VIAS.includes(Number(n.vias)) ? Number(n.vias) : 4);
+    const isCTO = n => !!n && n.type === 'tap' && n.model === 'cto';
+    const CTO_VIAS = [8, 16];
+    const tapVias = n => isDG(n) ? 4 : isCTO(n) ? (CTO_VIAS.includes(Number(n.vias)) ? Number(n.vias) : 8) : (TAP_VIAS.includes(Number(n.vias)) ? Number(n.vias) : 4);
     // TX esperado na origem: fora da faixa gera alerta (confirmar com medidor)
     const ORIGIN_TX = {
       tap: { min: 36, max: 43, label: 'TAP', msg: 'Possível rede externa desalinhada, confirme com uso de medidor de sinais.' },
@@ -453,10 +472,11 @@
     // Origem sem sinais informados (todos em branco ou todos zero): não calcula nem gera alerta
     function originBlank(n) {
       const sg = (n && n.signals) || {};
+      if (isCTO(n)) return sigVal(sg.pot) == null;
       return ['ca', 'cb', 'rx', 'tx'].every(k => { const v = sigVal(sg[k]); return v == null || v === 0; });
     }
     function originAlert(n) {
-      if (!n || n.type !== 'tap') return null;
+      if (!n || n.type !== 'tap' || isCTO(n)) return null;
       const r = ORIGIN_TX[isDG(n) ? 'dg' : 'tap'];
       if (originBlank(n)) return null;
       const tx = sigVal((n.signals || {}).tx);
@@ -479,7 +499,7 @@
     const isDefaultTapName = name => name === 'TAP 23P' || /^TAP Rede externa \d+ vias$/.test(name || '');
 
     function outPorts(node) {
-      if (node.type === 'tap') return Array.from({ length: tapVias(node) }, (_, i) => ({ id: 'out' + (i + 1), label: 'Via ' + (i + 1), loss: 0 }));
+      if (node.type === 'tap') return Array.from({ length: tapVias(node) }, (_, i) => ({ id: 'out' + (i + 1), label: (isCTO(node) ? 'Porta ' : 'Via ') + (i + 1), loss: 0 }));
       const d = NODE_DEFS[node.type];
       return d ? d.outs : [];
     }
@@ -559,10 +579,453 @@
     function targetProblem(target) {
       if (!linkSource) return 'Nenhuma porta de origem selecionada.';
       if (target.id === linkSource.nodeId) return 'Não é possível ligar um componente nele mesmo.';
-      if (target.type === 'tap') return 'O TAP é a origem do sinal e não possui entrada.';
+      if (target.type === 'tap') return isCTO(target) ? 'A CTO é a origem do sinal e não possui entrada.' : 'O TAP é a origem do sinal e não possui entrada.';
       if (inputConn(target.id)) return `A entrada de "${target.name}" já está ocupada.`;
       if (isAncestor(target.id, linkSource.nodeId)) return 'Essa ligação criaria um laço na rede.';
       return null;
+    }
+
+    // =====================================================================
+    // --- MODO GPON / XGS-PON (projeto de fibra óptica) ---
+    // =====================================================================
+    // Perdas usadas no balanço óptico (mínimo / máximo)
+    const GPON = {
+      conector: { min: 0.5, max: 0.8 },    // por conector
+      cordao:   { min: 1.0, max: 1.6 },    // cordão óptico (conectores inclusos)
+      fibra:    { min: 0.25, max: 0.35 },  // dB por km (drop)
+      spl12: 3.5                           // divisor óptico 1:2
+    };
+    // Faixa na ONT/ONU (dBm), fixa: verde de -8 a -25 · atenção de -25 a -27 · fora abaixo de -27 ou acima de -8
+    const GPON_LIMITS = { okMin: -25, min: -27, max: -8 };
+    const GPON_CABLES = {
+      'Drop':          { name: 'Drop (fibra)',  color: '#a3e635', light: '#4d7c0f', width: 3 },
+      'Cordão óptico': { name: 'Cordão óptico', color: '#facc15', light: '#a16207', width: 3 }
+    };
+    const isGponCable = t => !!GPON_CABLES[t];
+    const fmt2 = v => (v == null || isNaN(v)) ? '--' : Number(v).toFixed(2);
+    const ctoName = v => `CTO ${v} portas`;
+    const isDefaultCtoName = name => /^CTO \d+ portas$/.test(name || '');
+
+    // Atenuação de uma ligação óptica: drop = metros de fibra + conectores; cordão = perda fixa
+    function gponCableLoss(c) {
+      if (c.cableType === 'Cordão óptico') return { min: GPON.cordao.min, max: GPON.cordao.max };
+      const km = (Number(c.length) || 0) / 1000, k = Math.max(0, Math.round(Number(c.conectores) || 0));
+      return { min: km * GPON.fibra.min + k * GPON.conector.min, max: km * GPON.fibra.max + k * GPON.conector.max };
+    }
+    function gponCableLabel(c) {
+      if (c.cableType === 'Cordão óptico') return Number(c.length) > 0 ? `${c.length}m cordão óptico` : 'cordão óptico';
+      const k = Math.max(0, Math.round(Number(c.conectores) || 0));
+      return `${c.length}m drop · ${k} con.`;
+    }
+    function gponMetrics(n) {
+      const lv = n.lv, L = GPON_LIMITS;
+      return [
+        { key: 'min', short: 'MÍN', label: 'MÍN (perda mínima)', val: lv ? lv.min : null, min: L.min, max: L.max, warnBelow: L.okMin, unit: 'dBm' },
+        { key: 'max', short: 'MÁX', label: 'MÁX (perda máxima)', val: lv ? lv.max : null, min: L.min, max: L.max, warnBelow: L.okMin, unit: 'dBm' }
+      ];
+    }
+    function diagnoseGpon(n) {
+      const metrics = gponMetrics(n), L = GPON_LIMITS;
+      if (!n.lv) {
+        metrics.forEach(m => m.st = 'none');
+        return { status: 'none', metrics, notes: ['Sem caminho de sinal até a CTO. Ligue esta ONT a uma porta da CTO ou do divisor.'], suggestions: [], summary: '' };
+      }
+      if (metrics.some(m => m.val == null)) {
+        metrics.forEach(m => m.st = 'none');
+        return { status: 'none', metrics, notes: ['Potência da CTO ainda não informada: preencha no painel da CTO (ex.: −20 dBm).'], suggestions: [], summary: '' };
+      }
+      let status = 'ok';
+      metrics.forEach(m => { m.st = evalMetric(m.val, m.min, m.max, m.warnBelow); if (ST_RANK[m.st] > ST_RANK[status]) status = m.st; });
+      const notes = [], best = n.lv.min, worst = n.lv.max;
+      if (worst < L.min) notes.push(`MÁX (perda máxima) em ${fmt(worst)} dBm: ${fmtDb(L.min - worst)} dB abaixo do limite (${L.min} dBm).`);
+      else if (worst < L.okMin) notes.push(`MÁX (perda máxima) em ${fmt(worst)} dBm: na faixa de atenção (${L.okMin} a ${L.min} dBm).`);
+      if (best < L.min) notes.push(`Até com a perda mínima o sinal fica em ${fmt(best)} dBm, abaixo de ${L.min} dBm.`);
+      if (best > L.max) notes.push(`MÍN (perda mínima) em ${fmt(best)} dBm: acima de ${L.max} dBm, risco de saturar a ONT.`);
+      let summary = '';
+      if (worst < L.okMin) {
+        const need = L.okMin - worst;
+        summary = `Para ficar no verde no pior caso é preciso tirar ${fmtDb(need)} dB do caminho: use menos conectores (cada um soma 0,5 a 0,8 dB), encurte o drop, evite divisor a mais ou confira a potência na porta da CTO.`;
+      } else if (best > L.max) {
+        summary = `Sinal forte demais: acrescente pelo menos ${fmtDb(best - L.max)} dB de atenuação (atenuador óptico) antes da ONT.`;
+      }
+      return { status, metrics, notes, suggestions: [], summary };
+    }
+
+    // --- Desenhos do modo GPON ---
+    function renderCTO(n) {
+      const used = connections.filter(c => c.from === n.id).length;
+      const pot = sigVal((n.signals || {}).pot);
+      return `
+        <div class="bg-slate-900 border border-emerald-600/70 rounded-xl p-3 shadow-xl w-60 text-sm pb-4">
+          <div class="flex items-start justify-between gap-1.5 border-b border-slate-800 pb-1.5 mb-2">
+            <span class="font-bold text-[15px] text-emerald-400 flex items-start gap-1.5 leading-tight">
+              <i class="fa-solid fa-box-archive mt-0.5"></i> <span>${esc(n.name)}</span>
+            </span>
+            <span class="shrink-0 text-[11px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-bold">${tapVias(n)} PORTAS</span>
+          </div>
+          <div class="text-[12px] text-slate-400">CTO = NAP · ${esc(n.tec || 'GPON')}</div>
+          <div class="font-mono text-[15px] mt-1 text-slate-400">Potência: <span class="text-emerald-300 font-bold">${pot == null ? '--' : fmt2(pot)}</span> <span class="text-[12px]">dBm</span></div>
+          <div class="mt-1.5 text-[12px] text-slate-500">Portas em uso: <b class="text-slate-300">${used}/${tapVias(n)}</b></div>
+        </div>`;
+    }
+    function renderONT(n) {
+      const d = diagnose(n, false);
+      return `
+        <div class="bg-slate-900 border ${ST[d.status].border} rounded-xl p-3 shadow-xl w-60 text-sm">
+          <div class="flex items-center gap-2 border-b border-slate-800 pb-1.5 mb-2">
+            <svg class="w-11 h-9 shrink-0" viewBox="0 0 60 48">
+              <path d="M18 10 Q30 0 42 10" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+              <path d="M23 15 Q30 9 37 15" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+              <rect x="4" y="20" width="52" height="24" rx="5" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+              <circle cx="14" cy="32" r="2.2" fill="#22c55e"/><circle cx="22" cy="32" r="2.2" fill="#22c55e"/><circle cx="30" cy="32" r="2.2" fill="#22c55e"/>
+              <text x="37" y="35" fill="#94a3b8" font-size="8" font-weight="bold">ONT</text>
+            </svg>
+            <div class="min-w-0">
+              <strong class="text-slate-100 font-bold text-[15px] block leading-tight truncate">${esc(n.name)}</strong>
+              <span class="text-[12px] text-slate-400 block">ONT = ONU · ${esc((originOf(n) || {}).tec || 'GPON')}</span>
+            </div>
+          </div>
+          ${levelsGridHTML(d)}
+          <div class="mt-2 flex justify-between items-center gap-1 text-[12px] [&>span]:text-[11px]"><span class="text-slate-500">dBm</span>${statusBadge(d.status)}</div>
+        </div>`;
+    }
+    function renderSplSVG(n) {
+      return `<svg viewBox="0 0 140 90" width="150" class="block overflow-visible">
+        <rect x="10" y="16" width="120" height="58" rx="9" fill="#0f172a" stroke="#22c55e" stroke-width="2.5"/>
+        <rect x="62" y="2" width="16" height="16" rx="3" fill="#16a34a"/>
+        <rect x="32" y="72" width="16" height="16" rx="3" fill="#16a34a"/>
+        <rect x="92" y="72" width="16" height="16" rx="3" fill="#16a34a"/>
+        <text x="70" y="46" fill="#e2e8f0" font-size="20" font-weight="800" text-anchor="middle">1:2</text>
+        <text x="70" y="63" fill="#86efac" font-size="10" font-weight="700" text-anchor="middle">PLC · ${String(GPON.spl12).replace('.', ',')} dB</text>
+      </svg>`;
+    }
+
+    // --- Painéis do modo GPON ---
+    function ctoPanelHTML(n) {
+      const used = connections.filter(c => c.from === n.id).length;
+      const pot = sigVal((n.signals || {}).pot);
+      const ports = outPorts(n).map(p => {
+        const c = portConn(n.id, p.id), dest = c ? byId(c.to) : null;
+        return `<li class="flex items-center justify-between gap-2 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1">
+          <span class="text-[11px] font-semibold text-slate-200">${p.label}</span>
+          ${c ? `<button data-id="${esc(c.id)}" onclick="selectConnection(this.dataset.id)" class="text-[10px] text-sky-300 hover:text-sky-200 font-semibold truncate max-w-[150px]" title="Selecionar ligação">→ ${esc(dest ? dest.name : '')} (${esc(gponCableLabel(c))})</button>`
+              : `<button data-port="${p.id}" onclick="startLinkFromPanel(this.dataset.port)" class="px-2 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-700 text-emerald-300 text-[10px] font-bold">Ligar fibra</button>`}
+        </li>`;
+      }).join('');
+      return `
+        <div class="space-y-2 border-t border-slate-800 pt-2">
+          <label class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Potência na porta da CTO</label>
+          <div class="grid grid-cols-2 gap-1.5 text-xs">
+            <div>
+              <span class="text-slate-400 text-[10px] block">Potência (dBm)</span>
+              <input type="number" step="0.01" placeholder="ex.: -20" value="${pot == null ? '' : esc(pot)}" onchange="updateCtoPot(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-emerald-300 font-mono font-bold">
+            </div>
+            <div>
+              <span class="text-slate-400 text-[10px] block">Tecnologia</span>
+              <select onchange="updateCtoTec(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-semibold">
+                ${['GPON', 'XGS-PON'].map(t => `<option ${t === (n.tec || 'GPON') ? 'selected' : ''}>${t}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-500 leading-snug">Meça a potência na porta da CTO (NAP) e digite aqui. O simulador desconta conectores, fibra, divisor e cordão até a ONT.</p>
+        </div>
+        <div class="border-t border-slate-800 pt-2 space-y-1.5">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Portas da CTO</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            ${CTO_VIAS.map(v => `<button onclick="updateCtoVias(${v})" ${v < used ? 'disabled' : ''} class="py-1 rounded-lg border text-[11px] font-bold disabled:opacity-40 ${v === tapVias(n) ? 'bg-emerald-950/70 border-emerald-500 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}">${v} portas</button>`).join('')}
+          </div>
+          <p class="text-[10px] text-slate-500">${used} de ${tapVias(n)} portas em uso.</p>
+          <ul class="space-y-1">${ports}</ul>
+        </div>`;
+    }
+    function splPropsHTML(n) {
+      const lv = n.lv;
+      const ports = outPorts(n).map(p => {
+        const c = portConn(n.id, p.id), dest = c ? byId(c.to) : null;
+        const right = c
+          ? `<button data-id="${esc(c.id)}" onclick="selectConnection(this.dataset.id)" class="text-[10px] text-sky-300 hover:text-sky-200 font-semibold text-right truncate max-w-[130px]">→ ${esc(dest ? dest.name : '')}</button>`
+          : `<button data-port="${esc(p.id)}" onclick="startLinkFromPanel(this.dataset.port)" class="px-2 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-700 text-emerald-300 text-[10px] font-bold">Ligar fibra</button>`;
+        return `<li class="bg-slate-950 border border-slate-800 rounded-lg p-2"><div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-semibold text-slate-200">${esc(p.label)} <span class="font-mono text-amber-400">−${String(p.loss).replace('.', ',')} dB</span></span>${right}</div></li>`;
+      }).join('');
+      return `
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Rotação <span class="font-mono text-sky-300 normal-case">${n.rot || 0}°</span></label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="rotateSelected(-90)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold"><i class="fa-solid fa-rotate-left"></i> 90°</button>
+            <button onclick="rotateSelected(90)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold"><i class="fa-solid fa-rotate-right"></i> 90°</button>
+            <button onclick="rotateSelected(0)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold">Zerar</button>
+          </div>
+        </div>
+        <div class="border-t border-slate-800 pt-2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Sinal na entrada (dBm)</label>
+          ${lv && lv.min != null ? `<div class="grid grid-cols-2 gap-1 font-mono text-[10px] text-center">
+              <div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">MÍN</span><strong class="text-slate-200">${fmt(lv.min)}</strong></div>
+              <div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">MÁX</span><strong class="text-slate-200">${fmt(lv.max)}</strong></div>
+            </div>` : `<p class="text-[11px] text-slate-500">Sem sinal: a entrada não está ligada à CTO (ou a potência não foi informada).</p>`}
+        </div>
+        <div class="border-t border-slate-800 pt-2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Saídas</label>
+          <ul class="space-y-1.5">${ports}</ul>
+        </div>`;
+    }
+    function gponCablePanelHTML(c) {
+      const src = byId(c.from), dst = byId(c.to);
+      const portOpts = outPorts(src).filter(p => p.id === c.fromPort || p.multi || !portConn(src.id, p.id));
+      const loss = gponCableLoss(c), drop = c.cableType !== 'Cordão óptico';
+      return `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-slate-100">Editar Fibra</h3>
+            <button onclick="deleteSelectedConnection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir ligação"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+          <p class="text-[11px] text-slate-300"><b>${esc(src.name)}</b> <i class="fa-solid fa-arrow-right text-slate-500 mx-1"></i> <b>${esc(dst.name)}</b></p>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Porta de origem</label>
+            <select onchange="updateCablePort(this.value)" ${portOpts.length < 2 ? 'disabled' : ''} class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-semibold disabled:opacity-60">
+              ${portOpts.map(p => `<option value="${esc(p.id)}" ${p.id === c.fromPort ? 'selected' : ''}>${esc(p.label)}${p.loss ? ` · −${p.loss} dB` : ''}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tipo</label>
+            <select onchange="updateCableType(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-semibold">
+              ${Object.keys(GPON_CABLES).map(t => `<option value="${t}" ${t === c.cableType ? 'selected' : ''}>${GPON_CABLES[t].name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">${drop ? 'Distância (m)' : 'Comprimento (m)'}</label>
+              <input type="number" min="0" value="${esc(c.length)}" onchange="updateCableLength(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-100 font-mono">
+            </div>
+            ${drop ? `<div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Conectores</label>
+              <input type="number" min="0" step="1" value="${esc(Math.max(0, Math.round(Number(c.conectores) || 0)))}" onchange="updateCableConectores(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-100 font-mono">
+            </div>` : ''}
+          </div>
+          <p class="text-[10px] text-slate-500 leading-snug">${drop
+            ? `Drop: fibra ${String(GPON.fibra.min).replace('.', ',')} a ${String(GPON.fibra.max).replace('.', ',')} dB/km pela metragem + cada conector ${String(GPON.conector.min).replace('.', ',')} a ${String(GPON.conector.max).replace('.', ',')} dB.`
+            : `Cordão óptico: perda fixa de ${String(GPON.cordao.min).replace('.', ',')} a ${String(GPON.cordao.max).replace('.', ',')} dB (conectores inclusos). O comprimento é só para o levantamento de material.`}</p>
+          <div class="border-t border-slate-800 pt-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Atenuação nesta ligação (dB)</label>
+            <div class="grid grid-cols-2 gap-1 font-mono text-[10px] text-center">
+              <div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">MÍN</span><strong class="text-slate-200">${fmt2(loss.min)}</strong></div>
+              <div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">MÁX</span><strong class="text-slate-200">${fmt2(loss.max)}</strong></div>
+            </div>
+          </div>
+        </div>`;
+    }
+    function gponLimitsHTML() {
+      const L = GPON_LIMITS;
+      const box = (v, label, cls) => `<div class="bg-slate-950 border border-slate-800 rounded-lg px-1.5 py-1"><span class="text-slate-400 text-[10px] block">${label}</span><b class="text-xs font-mono ${cls}">${v}</b></div>`;
+      return `
+          <div class="border-t border-slate-800 pt-2 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Sinal na ONT (dBm)</label>
+              <span class="text-[10px] text-slate-500"><i class="fa-solid fa-lock"></i> fixos</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              ${box(`${L.max} a ${L.okMin}`, 'OK', 'text-emerald-400')}${box(`${L.okMin} a ${L.min}`, 'Atenção', 'text-amber-400')}${box(`< ${L.min}`, 'Fora', 'text-rose-400')}
+            </div>
+            <p class="text-[10px] text-slate-500 leading-snug">MÍN = perda mínima do caminho · MÁX = perda máxima. Acima de ${L.max} dBm também fica fora (satura a ONT). Perdas: conector ${String(GPON.conector.min).replace('.', ',')}–${String(GPON.conector.max).replace('.', ',')} dB · cordão ${String(GPON.cordao.min).replace('.', ',')}–${String(GPON.cordao.max).replace('.', ',')} dB · divisor 1:2 ${String(GPON.spl12).replace('.', ',')} dB · fibra ${String(GPON.fibra.min).replace('.', ',')}–${String(GPON.fibra.max).replace('.', ',')} dB/km.</p>
+          </div>`;
+    }
+
+    // --- Edições do modo GPON ---
+    function updateCtoPot(val) {
+      const n = byId(selectedNodeId);
+      if (!n || !isCTO(n)) return;
+      const v = parseFloat(String(val).replace(',', '.'));
+      n.signals = { ...(n.signals || {}), pot: isNaN(v) ? '' : v };
+      refresh();
+    }
+    function updateCtoTec(val) {
+      const n = byId(selectedNodeId);
+      if (!n || !isCTO(n)) return;
+      n.tec = val === 'XGS-PON' ? 'XGS-PON' : 'GPON';
+      refresh();
+    }
+    function updateCtoVias(v) {
+      const n = byId(selectedNodeId);
+      if (!n || !isCTO(n) || !CTO_VIAS.includes(v)) return;
+      const cs = connections.filter(c => c.from === n.id);
+      if (cs.length > v) { showToast(`Há ${cs.length} fibras ligadas: escolha uma CTO com pelo menos ${cs.length} portas.`, 'warning'); return; }
+      n.vias = v;
+      cs.forEach(c => { if (Number(String(c.fromPort).replace('out', '')) > v) c.fromPort = null; });
+      const usedP = new Set(cs.filter(c => c.fromPort).map(c => c.fromPort));
+      cs.filter(c => !c.fromPort).forEach(c => { for (let i = 1; i <= v; i++) if (!usedP.has('out' + i)) { c.fromPort = 'out' + i; usedP.add(c.fromPort); break; } });
+      if (isDefaultCtoName(n.name)) n.name = ctoName(v);
+      refresh();
+    }
+    function updateCableConectores(val) {
+      const c = connById(selectedConnectionId);
+      if (!c) return;
+      const v = Math.round(parseFloat(String(val).replace(',', '.')));
+      c.conectores = isNaN(v) || v < 0 ? 0 : Math.min(v, 20);
+      refresh();
+    }
+
+    // --- Troca entre HFC e GPON (cada tipo guarda o seu último projeto) ---
+    function syncModeUI() {
+      const g = isGpon();
+      const on = 'bg-sky-600 text-white', off = 'bg-slate-800 text-slate-300 hover:bg-slate-700';
+      const bh = document.getElementById('mode-hfc'), bg = document.getElementById('mode-gpon');
+      if (bh) bh.className = `px-2.5 py-1.5 transition ${g ? off : on}`;
+      if (bg) bg.className = `px-2.5 py-1.5 transition border-l border-slate-700 ${g ? 'bg-emerald-600 text-white' : off}`;
+      const sub = document.getElementById('brand-mode');
+      if (sub) sub.textContent = g ? 'Projeto de Fibra Óptica GPON / XGS-PON' : 'Projeto de TV & Banda Larga Coaxial';
+      if (g && !isGponCable(activeCableType)) activeCableType = 'Drop';
+      if (!g && isGponCable(activeCableType)) activeCableType = 'RG6';
+      renderDock();
+    }
+    function setModeQuiet(m) {
+      projectMode = m === 'gpon' ? 'gpon' : 'hfc';
+      syncModeUI();
+    }
+    function setProjectMode(m) {
+      m = m === 'gpon' ? 'gpon' : 'hfc';
+      if (m === projectMode) return;
+      flushCommit();
+      try { localStorage.setItem(autosaveKey + '.modo.' + projectMode, stateJSON()); } catch (err) { /* ignora */ }
+      let st = null;
+      try { st = JSON.parse(localStorage.getItem(autosaveKey + '.modo.' + m) || 'null'); } catch (err) { st = null; }
+      setActiveScenario(null);
+      if (st && Array.isArray(st.nodes) && st.nodes.length && (st.mode === 'gpon' ? 'gpon' : 'hfc') === m) {
+        applyLoadedState(st);
+      } else if (m === 'gpon') loadScenarioGpon1();
+      else loadScenario1();
+      showToast(m === 'gpon' ? 'Modo GPON / XGS-PON: CTO, drop, divisor 1:2, cordão óptico e ONT.' : 'Modo HFC: rede coaxial (TAP/DG, passivos, RG6/RG11).', 'info');
+    }
+
+    // --- Cenários de exemplo GPON ---
+    function loadScenarioGpon1() {
+      setActiveScenario(null);
+      setModeQuiet('gpon');
+      nodes = [
+        { id: 'cto', type: 'tap', model: 'cto', tec: 'GPON', name: ctoName(8), vias: 8, x: 24, y: 90, signals: { pot: -20 } },
+        { id: 'spl', type: 'spl12', name: 'Divisor 1:2', x: 320, y: 120, signals: {} },
+        { id: 'ont', type: 'ont', name: 'ONT 1', x: 560, y: 90, signals: {} }
+      ];
+      connections = [
+        { id: 'g1', from: 'cto', fromPort: 'out1', to: 'spl', cableType: 'Drop', length: 50, conectores: 2 },
+        { id: 'g2', from: 'spl', fromPort: 'out1', to: 'ont', cableType: 'Cordão óptico', length: 2 }
+      ];
+      openScenarioView();
+    }
+    function loadScenarioGpon2() {
+      setActiveScenario(null);
+      setModeQuiet('gpon');
+      nodes = [
+        { id: 'cto', type: 'tap', model: 'cto', tec: 'XGS-PON', name: ctoName(16), vias: 16, x: 24, y: 90, signals: { pot: -18.5 } },
+        { id: 'spl', type: 'spl12', name: 'Divisor 1:2', x: 320, y: 120, signals: {} },
+        { id: 'ont1', type: 'ont', name: 'ONT 1', x: 560, y: 40, signals: {} },
+        { id: 'ont2', type: 'ont', name: 'ONT 2', x: 560, y: 220, signals: {} }
+      ];
+      connections = [
+        { id: 'g1', from: 'cto', fromPort: 'out1', to: 'spl', cableType: 'Drop', length: 150, conectores: 2 },
+        { id: 'g2', from: 'spl', fromPort: 'out1', to: 'ont1', cableType: 'Cordão óptico', length: 2 },
+        { id: 'g3', from: 'spl', fromPort: 'out2', to: 'ont2', cableType: 'Drop', length: 25, conectores: 2 }
+      ];
+      openScenarioView();
+    }
+
+    // --- Relatório do modo GPON ---
+    function generateGponReport() {
+      recalculateSignals();
+      closeReportModal();
+      let dropM = 0, cordoes = 0, cordaoM = 0, conectores = 0;
+      connections.forEach(c => {
+        if (c.cableType === 'Cordão óptico') { cordoes++; cordaoM += Number(c.length || 0); }
+        else { dropM += Number(c.length || 0); conectores += Math.max(0, Math.round(Number(c.conectores) || 0)); }
+      });
+      const endpoints = nodes.filter(isEndpoint).map(n => ({ n, d: diagnose(n) }));
+      const counts = {};
+      nodes.forEach(n => {
+        const lab = n.type === 'tap' ? `${ctoName(tapVias(n))} (${n.tec || 'GPON'})` : EQUIP[n.type] ? EQUIP[n.type].label : NODE_DEFS[n.type].label;
+        counts[lab] = (counts[lab] || 0) + 1;
+      });
+      const countsHTML = Object.keys(counts).sort().map(k => `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5"><span class="text-slate-300">${esc(k)}</span><b class="font-mono text-slate-100">${counts[k]} un.</b></div>`).join('');
+      const rows = endpoints.map(({ n, d }) => `
+        <tr class="border-b border-slate-800 text-xs">
+          <td class="py-2 px-3 font-semibold text-slate-200">${esc(n.name)}</td>
+          ${d.metrics.map(m => `<td class="py-2 px-3 font-mono whitespace-nowrap ${ST[m.st].text}">${fmt(m.val)}</td>`).join('')}
+          <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap ${ST[d.status].chip}">${ST[d.status].report}</span></td>
+        </tr>`).join('');
+      const pathRows = endpoints.filter(e => e.n.lv && e.n.lv.min != null).map(({ n }) => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+          <strong class="text-xs text-slate-100 block mb-1">${esc(n.name)}</strong>
+          ${pathTableHTML(n, ['min', 'max'])}
+        </div>`).join('');
+      const issues = endpoints.filter(e => e.d.status !== 'ok');
+      const issuesHTML = issues.length ? issues.map(({ n, d }) => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
+          <div class="flex items-center justify-between gap-2 mb-1"><strong class="text-xs text-slate-100">${esc(n.name)}</strong><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${ST[d.status].chip}">${ST[d.status].label}</span></div>
+          <ul class="text-[11px] text-slate-300 list-disc pl-4 space-y-0.5">${d.notes.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+          ${d.summary ? `<p class="text-[11px] text-slate-400 mt-1.5">${esc(d.summary)}</p>` : ''}
+        </div>`).join('')
+        : `<p class="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-xl p-3"><i class="fa-solid fa-circle-check mr-1"></i> Todas as ONTs estão dentro do padrão.</p>`;
+      const L = GPON_LIMITS;
+      const card = (label, val, cls) => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold">${label}</span><strong class="text-lg font-mono ${cls || 'text-slate-100'}">${val}</strong></div>`;
+      const modal = document.createElement('div');
+      modal.id = 'report-modal';
+      modal.className = 'fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-start justify-center p-4 overflow-y-auto';
+      modal.innerHTML = `
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-6 my-8">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 bg-emerald-950 border border-emerald-700 text-emerald-400 rounded-xl"><i class="fa-solid fa-file-contract text-xl"></i></div>
+              <div>
+                <h2 class="text-base font-bold text-slate-100">Relatório Técnico da Instalação GPON / XGS-PON</h2>
+                <p class="text-xs text-slate-400">Balanço de potência óptica e levantamento de materiais</p>
+              </div>
+            </div>
+            <button onclick="closeReportModal()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+          </div>
+          ${nodes.length ? `
+          <div class="report-map">
+            <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">1. Topologia do Projeto</h3>
+            <div class="rounded-xl border border-slate-700 overflow-hidden bg-white">${reportMapSVG()}</div>
+            <p class="text-[10px] text-slate-500 mt-2">Desenho organizado automaticamente (CTO à esquerda, ONTs à direita). Verde-limão = drop · amarelo = cordão óptico.</p>
+          </div>` : ''}
+          <div>
+            <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">2. Levantamento de Materiais</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              ${card('Cabo drop', dropM + 'm')}${card('Conectores', conectores + ' un.', 'text-amber-300')}${card('Cordões ópticos', cordoes + ' un.' + (cordaoM ? ` · ${cordaoM}m` : ''))}${card('Componentes', nodes.length + ' un.', 'text-emerald-400')}
+            </div>
+            ${countsHTML ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Componentes por modelo</span><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-[11px]">${countsHTML}</div></div>` : ''}
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">3. Sinal nas ONTs</h3>
+            <div class="overflow-x-auto border border-slate-800 rounded-xl bg-slate-950">
+              <table class="w-full text-left border-collapse">
+                <thead><tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 bg-slate-900/60"><th class="py-2 px-3">ONT / ONU</th><th class="py-2 px-3">MÍN</th><th class="py-2 px-3">MÁX</th><th class="py-2 px-3">Status</th></tr></thead>
+                <tbody>${rows || '<tr><td colspan="4" class="p-4 text-center text-xs text-slate-500">Nenhuma ONT conectada.</td></tr>'}</tbody>
+              </table>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2 font-mono">Sinal em dBm. MÍN = perda mínima · MÁX = perda máxima. OK de ${L.max} a ${L.okMin} · atenção de ${L.okMin} a ${L.min} · fora abaixo de ${L.min} ou acima de ${L.max}.</p>
+            ${pathRows ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">${pathRows}</div>` : ''}
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">4. Diagnóstico e Recomendações</h3>
+            <div class="space-y-2">${issuesHTML}</div>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button onclick="window.print()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"><i class="fa-solid fa-print"></i> Imprimir / Salvar PDF</button>
+            <button onclick="closeReportModal()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white py-2.5 rounded-xl text-xs font-bold transition">Fechar Relatório</button>
+          </div>
+          <p class="text-[10px] text-slate-500 text-center">Simulador HFC Pro · modo GPON / XGS-PON · Versão Prévia ${APP_VERSION} · by BRENDLER™ · gerado em ${new Date().toLocaleString('pt-BR')}</p>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+    // Linhas de texto do card no desenho do relatório (modo GPON)
+    function gponReportLines(n, d) {
+      const x = n.x + 12;
+      if (n.type === 'tap') {
+        const p = sigVal((n.signals || {}).pot);
+        return `<text x="${x}" y="${n.y + 62}" font-size="12" font-family="monospace"><tspan fill="#64748b">Potência </tspan><tspan fill="#047857" font-weight="700">${p == null ? '--' : fmt2(p)} dBm</tspan></text>`;
+      }
+      const COL = { ok: '#059669', warn: '#d97706', bad: '#e11d48', none: '#64748b' };
+      const m = d ? d.metrics : [];
+      return `<text x="${x}" y="${n.y + 62}" font-size="12" font-family="monospace">${m.map(k => `<tspan fill="#64748b">${k.short} </tspan><tspan fill="${COL[k.st]}" font-weight="700">${fmt(k.val)}</tspan><tspan dx="10"> </tspan>`).join('')}</text>`;
     }
 
     // --- INITIALIZATION ---
@@ -598,7 +1061,7 @@
     }
 
     // --- DOCK (paleta por categorias) ---
-    const CABLE_STYLE = { 'RG6': '#38bdf8', 'RG6 Preto': '#475569', 'RG11': '#818cf8' };
+    const CABLE_STYLE = { 'RG6': '#38bdf8', 'RG6 Preto': '#475569', 'RG11': '#818cf8', 'Drop': '#a3e635', 'Cordão óptico': '#facc15' };
     const cableInfo = t => { const c = cableAttenuation[t]; return `${c.CA.toFixed(2)} dB/m em CA/RX · ${c.CB.toFixed(2)} em CB · ${c.TX.toFixed(2)} em TX`; };
     const PALETTE = [
       { id: 'passivos', label: 'Passivos', icon: 'fa-code-branch', groups: [
@@ -633,6 +1096,26 @@
         { label: 'DG', items: [{ type: 'dg', name: 'DG', tag: '4 vias', info: 'DG: origem do sinal com 4 vias. Só aceita cabo RG6 Branco.' }] },
       ] }
     ];
+    const PALETTE_GPON = [
+      { id: 'passivos', label: 'Passivos', icon: 'fa-code-branch', groups: [
+        { label: 'Divisor óptico', items: [
+          { type: 'spl12', name: 'Divisor 1:2', tag: '3,5 dB', info: 'Divisor óptico 1:2 (PLC): 2 saídas, atenuação de 3,5 dB' }
+        ] }
+      ] },
+      { id: 'cabos', label: 'Fibras', icon: 'fa-bezier-curve', groups: [
+        { label: 'Tipo de ligação óptica', items: [
+          { cable: 'Drop', name: 'Drop (fibra)', tag: 'm + conectores', info: 'Cabo drop: ao ligar, informe a distância (m) e quantos conectores; a perda soma fibra (0,25 a 0,35 dB/km) e conectores (0,5 a 0,8 dB cada)' },
+          { cable: 'Cordão óptico', name: 'Cordão óptico', tag: '1,0 – 1,6 dB', info: 'Cordão óptico (patch cord): perda fixa de 1,0 a 1,6 dB, conectores inclusos' }
+        ] }
+      ] },
+      { id: 'equip', label: 'Equipamentos', icon: 'fa-hard-drive', groups: [
+        { label: 'Equipamento do cliente', items: [{ type: 'ont', name: 'ONT/ONU', tag: 'dBm', info: 'ONT = ONU: OK de −8 a −25 dBm, atenção de −25 a −27, fora abaixo de −27' }] }
+      ] },
+      { id: 'origem', label: 'Origem', icon: 'fa-tower-cell', groups: [
+        { label: 'CTO = NAP', items: CTO_VIAS.map(v => ({ type: 'cto' + v, name: `CTO ${v} portas`, tag: 'dBm na porta', info: `${ctoName(v)}: origem do sinal óptico; informe a potência medida na porta (ex.: −20 dBm)` })) }
+      ] }
+    ];
+    const curPalette = () => isGpon() ? PALETTE_GPON : PALETTE;
     let activeCategory = null;   // null = nenhuma categoria aberta (dock recolhido)
     const DEFAULT_HINT = 'Escolha uma categoria e clique em um item (ou arraste para o mapa). Para ligar um cabo, clique em uma porta verde e depois no destino. Clique de novo na categoria para recolher.';
 
@@ -658,6 +1141,7 @@
         const svg = passiveSVG({ type: item.type });
         return `<div style="width:${d.w * k}px;height:${h * k}px"><div style="width:${d.w}px;transform:scale(${k});transform-origin:0 0;pointer-events:none">${svg}</div></div>`;
       }
+      if (String(item.type).startsWith('cto')) return `<div class="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-600/50 flex items-center justify-center text-emerald-400 text-base"><i class="fa-solid fa-box-archive"></i></div>`;
       if (item.type === 'dg') return `<div class="w-10 h-10 rounded-lg bg-violet-950 border border-violet-600/50 flex items-center justify-center text-violet-400 text-base"><i class="fa-solid fa-server"></i></div>`;
       if (String(item.type).startsWith('tap')) return `<div class="w-10 h-10 rounded-lg bg-sky-950 border border-sky-600/50 flex items-center justify-center text-sky-400 text-base"><i class="fa-solid fa-tower-cell"></i></div>`;
       const e = EQUIP[item.type];
@@ -669,7 +1153,7 @@
       const items = document.getElementById('dock-items');
       if (!cats || !items) return;
 
-      const open = !!PALETTE.find(c => c.id === activeCategory);
+      const open = !!curPalette().find(c => c.id === activeCategory);
       if (!open) activeCategory = null;
       const footer = document.getElementById('dock');
       footer.classList.toggle('h-44', open);
@@ -677,7 +1161,7 @@
       cats.className = open
         ? 'w-56 shrink-0 border-r border-slate-800 p-2 grid grid-cols-2 gap-1.5 bg-slate-950/40'
         : 'shrink-0 p-1.5 grid grid-cols-4 gap-1.5';
-      cats.innerHTML = PALETTE.map(c => `
+      cats.innerHTML = curPalette().map(c => `
         <button data-cat="${c.id}" onclick="setCategory(this.dataset.cat)" title="${c.id === activeCategory ? 'Clique de novo para recolher' : 'Mostrar ' + c.label}" class="rounded-lg border flex ${open ? 'flex-col gap-1' : 'flex-row gap-2 px-3 py-1.5'} items-center justify-center transition ${c.id === activeCategory ? 'bg-sky-950/70 border-sky-500 text-sky-300' : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-700/70 hover:text-slate-200'}">
           <i class="fa-solid ${c.icon} ${open ? 'text-base' : 'text-xs'}"></i>
           <span class="text-[10px] font-bold uppercase tracking-wide">${c.label}</span>
@@ -685,7 +1169,7 @@
 
       items.innerHTML = '';
       if (!open) { setHint(''); return; }
-      const cat = PALETTE.find(c => c.id === activeCategory);
+      const cat = curPalette().find(c => c.id === activeCategory);
       cat.groups.forEach(g => {
         const box = document.createElement('div');
         box.className = 'flex flex-col shrink-0';
@@ -733,7 +1217,7 @@
     function addNode(type, x, y) {
       const id = 'node_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
       let vias, model;
-      if ((/^tap[248]?$/.test(type) || type === 'dg') && nodes.some(n => n.type === 'tap')) {
+      if ((/^tap[248]?$/.test(type) || type === 'dg' || /^cto\d+$/.test(type)) && nodes.some(n => n.type === 'tap')) {
         const org = nodes.find(n => n.type === 'tap');
         showToast('Só pode haver uma origem por projeto. Para trocar entre TAP e DG ou mudar as vias, use o painel da origem.', 'warning');
         selectNode(org.id);
@@ -742,12 +1226,19 @@
       const tm = /^tap([248])?$/.exec(type);
       if (tm) { vias = Number(tm[1] || 4); type = 'tap'; }
       if (type === 'dg') { vias = 4; model = 'dg'; type = 'tap'; }
+      const cm = /^cto(\d+)$/.exec(type);
+      if (cm) { vias = CTO_VIAS.includes(Number(cm[1])) ? Number(cm[1]) : 8; model = 'cto'; type = 'tap'; }
       let name = NODE_DEFS[type] ? NODE_DEFS[type].label : type.toUpperCase();
       let initSignals = {};
 
-      if (type === 'tap') {
+      if (type === 'tap' && model === 'cto') {
+        name = ctoName(vias);
+        initSignals = { pot: '' };   // potência na porta da CTO (dBm), em branco até informar
+      } else if (type === 'tap') {
         name = model === 'dg' ? 'DG' : tapName(vias);
         initSignals = { ca: '', cb: '', rx: '', tx: '' };   // em branco até o técnico informar
+      } else if (type === 'ont') {
+        name = nextNumberedName('ONT');
       } else if (type === 'tv' || type === 'box') {
         name = nextNumberedName(EQUIP[type].name);
       } else if (EQUIP[type]) {
@@ -818,6 +1309,8 @@
 
       // A ligação só é criada depois que a distância é informada no pop-up
       let cableType = activeCableType;
+      if (isGpon() && !isGponCable(cableType)) cableType = 'Drop';
+      if (!isGpon() && isGponCable(cableType)) cableType = 'RG6';
       if (isDG(byId(linkSource.nodeId)) && cableType !== DG_CABLE) {
         cableType = DG_CABLE;
         showToast('No DG só é permitido cabo RG6 Branco: o cabo será RG6 Branco.', 'warning');
@@ -834,7 +1327,30 @@
       const src = byId(pendingConn.from), dst = byId(pendingConn.to);
       const a = portPos(src, pendingConn.fromPort), b = portPos(dst, 'in');
       const canvas = document.getElementById('canvas-container');
-      const W = 232, H = 150;
+      const gp = isGpon(), cordao = pendingConn.cableType === 'Cordão óptico';
+      const W = 232, H = gp ? 200 : 150;
+      const inCls = 'w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-sky-500';
+      const popupFields = !gp ? `
+          <label class="block">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Distância (metros)</span>
+            <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 15" class="${inCls}">
+          </label>` : cordao ? `
+          <label class="block">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comprimento (metros)</span>
+            <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" value="2" class="${inCls}">
+          </label>
+          <p class="text-[10px] text-slate-400 leading-snug">Perda fixa do cordão: 1,0 a 1,6 dB (conectores inclusos).</p>` : `
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Distância (m)</span>
+              <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 80" class="${inCls}">
+            </label>
+            <label class="block">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Conectores</span>
+              <input id="conn-popup-input" type="text" inputmode="numeric" autocomplete="off" value="2" class="${inCls}">
+            </label>
+          </div>
+          <p class="text-[10px] text-slate-400 leading-snug">Fibra 0,25 a 0,35 dB/km + cada conector 0,5 a 0,8 dB.</p>`;
       const mx = (a.x + b.x) / 2 * view.zoom + view.x, my = (a.y + b.y) / 2 * view.zoom + view.y;
       const x = Math.max(8, Math.min(canvas.clientWidth - W - 8, mx - W / 2));
       const y = Math.max(8, Math.min(canvas.clientHeight - H - 8, my - H / 2));
@@ -847,14 +1363,11 @@
       wrap.innerHTML = `
         <div class="absolute bg-slate-900 border border-sky-500 rounded-xl shadow-2xl p-3 space-y-2" style="left:${x}px; top:${y}px; width:${W}px">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-slate-100"><span class="inline-block w-4 h-1 rounded align-middle mr-1" style="background:${CABLE_STYLE[pendingConn.cableType]}"></span>Cabo ${esc(pendingConn.cableType)}</span>
+            <span class="text-[11px] font-bold text-slate-100"><span class="inline-block w-4 h-1 rounded align-middle mr-1" style="background:${CABLE_STYLE[pendingConn.cableType]}"></span>${gp ? esc(GPON_CABLES[pendingConn.cableType].name) : 'Cabo ' + esc(pendingConn.cableType)}</span>
             <button onclick="cancelLengthPopup()" class="text-slate-400 hover:text-white text-xs px-1" title="Cancelar"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <p class="text-[10px] text-slate-400 truncate">${esc(src.name)} <i class="fa-solid fa-arrow-right mx-0.5"></i> ${esc(dst.name)}</p>
-          <label class="block">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Distância (metros)</span>
-            <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 15" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-sky-500">
-          </label>
+          ${popupFields}
           <div class="flex gap-2">
             <button onclick="cancelLengthPopup()" class="flex-1 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold">Cancelar</button>
             <button onclick="confirmLengthPopup()" class="flex-1 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold">Ligar cabo</button>
@@ -886,6 +1399,24 @@
       if (!pendingConn) return;
       const input = document.getElementById('length-popup-input');
       const length = parseFloat(String(input.value).replace(',', '.'));
+      if (isGpon()) {
+        const ci = document.getElementById('conn-popup-input');
+        const k = ci ? Math.round(parseFloat(String(ci.value).replace(',', '.'))) : 0;
+        if (isNaN(length) || length < 0 || (ci && (isNaN(k) || k < 0))) {
+          input.classList.add('border-rose-500');
+          input.focus();
+          showToast(ci ? 'Informe a distância em metros (0 ou mais) e a quantidade de conectores.' : 'Informe o comprimento do cordão em metros.', 'warning');
+          return;
+        }
+        const conn = { id: 'conn_' + Date.now() + '_' + Math.floor(Math.random() * 1000), ...pendingConn, length, ...(ci ? { conectores: Math.min(k, 20) } : {}) };
+        connections.push(conn);
+        closeLengthPopup();
+        selectedConnectionId = conn.id;
+        selectedNodeId = null;
+        refresh();
+        showToast(`${GPON_CABLES[conn.cableType].name} ligado: ${gponCableLabel(conn)}.`, 'success');
+        return;
+      }
       if (isNaN(length) || length <= 0) {
         input.classList.add('border-rose-500');
         input.focus();
@@ -937,7 +1468,9 @@
       nodes.filter(n => n.type === 'tap').forEach(tap => {
         const s = tap.signals || {};
         const blank = originBlank(tap);
-        tap.lv = { ca: blank ? null : sigVal(s.ca), cb: blank ? null : sigVal(s.cb), rx: blank ? null : sigVal(s.rx), tx: blank ? null : sigVal(s.tx) };
+        tap.lv = isCTO(tap)
+          ? { min: blank ? null : sigVal(s.pot), max: blank ? null : sigVal(s.pot) }
+          : { ca: blank ? null : sigVal(s.ca), cb: blank ? null : sigVal(s.cb), rx: blank ? null : sigVal(s.rx), tx: blank ? null : sigVal(s.tx) };
         walkSignals(tap, new Set([tap.id]));
       });
     }
@@ -947,10 +1480,20 @@
         const dest = byId(conn.to);
         if (!dest || seen.has(dest.id)) return;
 
-        const cable = cableAttenuation[conn.cableType] || cableAttenuation['RG6'];
-        const len = Number(conn.length) || 0;
         const port = portInfo(node, conn.fromPort);
         const p = port ? port.loss : 0;
+        if (node.lv && 'min' in node.lv) {   // óptico (GPON): perda mínima e máxima
+          const cl = gponCableLoss(conn), L = node.lv;
+          dest.lv = { min: L.min == null ? null : L.min - cl.min - p, max: L.max == null ? null : L.max - cl.max - p };
+          dest.path = node.path.slice();
+          if (node.type !== 'tap') dest.path.push({ kind: 'port', nodeId: node.id, portId: conn.fromPort, loss: { min: p, max: p } });
+          dest.path.push({ kind: 'cable', connId: conn.id, loss: cl });
+          seen.add(dest.id);
+          walkSignals(dest, seen);
+          return;
+        }
+        const cable = cableAttenuation[conn.cableType] || cableAttenuation['RG6'];
+        const len = Number(conn.length) || 0;
         const cab = { ca: cable.CA * len, cb: cable.CB * len, rx: cable.RX * len, tx: cable.TX * len };
 
         const L = node.lv;
@@ -978,15 +1521,17 @@
     };
     const ST_RANK = { ok: 0, warn: 1, bad: 2, none: 3 };
 
-    function evalMetric(val, min, max) {
+    function evalMetric(val, min, max, warnBelow) {
       if (val == null) return 'none';
       if (val < min || val > max) return 'bad';
+      if (warnBelow != null && val < warnBelow) return 'warn';
       if (val < min + limits.margin || val > max - limits.margin) return 'warn';
       return 'ok';
     }
 
     // Todos os equipamentos medem CA, CB, RX e TX
     function metricsFor(n) {
+      if (n.type === 'ont') return gponMetrics(n);
       const lv = n.lv, L = limits;
       return [
         { key: 'ca', label: 'CA (canal alto)',  val: lv ? lv.ca : null, min: L.caMin, max: Infinity, us: false },
@@ -998,7 +1543,7 @@
 
     function levelsGridHTML(d) {
       return `<div class="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[15px]">
-        ${d.metrics.map(m => `<div class="flex justify-between"><span class="text-slate-400">${m.key.toUpperCase()}:</span><strong class="${ST[m.st].text}">${fmt(m.val)}</strong></div>`).join('')}
+        ${d.metrics.map(m => `<div class="flex justify-between"><span class="text-slate-400">${m.short || m.key.toUpperCase()}:</span><strong class="${ST[m.st].text}">${fmt(m.val)}</strong></div>`).join('')}
       </div>`;
     }
 
@@ -1006,12 +1551,12 @@
     function statusOf(n) {
       if (!n.lv) return 'none';
       let st = 'ok';
-      metricsFor(n).forEach(m => { const x = evalMetric(m.val, m.min, m.max); if (ST_RANK[x] > ST_RANK[st]) st = x; });
+      metricsFor(n).forEach(m => { const x = evalMetric(m.val, m.min, m.max, m.warnBelow); if (ST_RANK[x] > ST_RANK[st]) st = x; });
       return st;
     }
     // Quanto o ponto está fora da faixa (soma em dB) — para saber se uma troca ajuda
     function violation(n) {
-      if (!n.lv || ['ca', 'cb', 'rx', 'tx'].some(k => n.lv[k] == null)) return Infinity;
+      if (!n.lv || metricsFor(n).some(m => m.val == null)) return Infinity;
       return metricsFor(n).reduce((t, m) => t + Math.max(0, m.min - m.val) + Math.max(0, m.val - m.max), 0);
     }
     // Testa uma correção numa cópia do projeto: resolve o ponto? tira algum outro ponto da faixa?
@@ -1062,20 +1607,21 @@
     }
 
     function diagnose(n, full = true) {
+      if (n.type === 'ont') return diagnoseGpon(n);
       const metrics = metricsFor(n);
       if (!n.lv) {
         metrics.forEach(m => m.st = 'none');
         return { status: 'none', metrics, notes: ['Sem caminho de sinal até o TAP. Ligue este ponto a uma porta de saída.'], suggestions: [], summary: '' };
       }
       if (metrics.some(m => m.val == null)) {
-        metrics.forEach(m => m.st = m.val == null ? 'none' : evalMetric(m.val, m.min, m.max));
+        metrics.forEach(m => m.st = m.val == null ? 'none' : evalMetric(m.val, m.min, m.max, m.warnBelow));
         return { status: 'none', metrics, notes: ['Sinais da origem (TAP ou DG) ainda não informados: preencha CA, CB, RX e TX no painel da origem.'], suggestions: [], summary: '' };
       }
 
       let reduce = 0, reduceBand = null, add = 0, addBand = null, status = 'ok';
       const notes = [];
       metrics.forEach(m => {
-        m.st = evalMetric(m.val, m.min, m.max);
+        m.st = evalMetric(m.val, m.min, m.max, m.warnBelow);
         if (ST_RANK[m.st] > ST_RANK[status]) status = m.st;
         const low = m.min - m.val, high = m.val - m.max;
         // Downstream baixo ou upstream alto => perda demais. O inverso => perda de menos.
@@ -1423,7 +1969,7 @@
     function freePassivePorts() {
       const out = [];
       nodes.forEach(n => {
-        if (!NODE_DEFS[n.type] || isLock(n.type)) return;
+        if (!NODE_DEFS[n.type] || isLock(n.type) || n.type === 'spl12') return;   // divisor óptico: saída livre não precisa de TRAVA LOCK
         NODE_DEFS[n.type].outs.forEach(pt => { if (!portConn(n.id, pt.id)) out.push({ node: n, port: pt }); });
       });
       return out;
@@ -1510,7 +2056,10 @@
           el.appendChild(host);
         }
 
-        if (node.type === 'tap') host.innerHTML = renderTAP(node);
+        if (isCTO(node)) host.innerHTML = renderCTO(node);
+        else if (node.type === 'tap') host.innerHTML = renderTAP(node);
+        else if (node.type === 'ont') host.innerHTML = renderONT(node);
+        else if (node.type === 'spl12') host.innerHTML = renderSplSVG(node);
         else if (node.type === 'modem') host.innerHTML = renderEMTA3896(node);
         else if (EQUIP[node.type]) host.innerHTML = renderTV(node);
         else if (isDiv(node.type)) host.innerHTML = renderSplitterSVG(node);
@@ -1553,9 +2102,10 @@
       } else {
         const used = portConn(node.id, portId);
         const isSrc = linkSource && linkSource.nodeId === node.id && linkSource.portId === portId;
-        cls += isSrc ? 'port-src' : (used && !port.multi ? 'port-used' : (NODE_DEFS[node.type] ? 'port-warn' : 'port-free'));
+        const needLock = NODE_DEFS[node.type] && node.type !== 'spl12';
+        cls += isSrc ? 'port-src' : (used && !port.multi ? 'port-used' : (needLock ? 'port-warn' : 'port-free'));
         const lossTxt = port.loss ? ` · −${port.loss} dB` : '';
-        b.title = `${port.label}${lossTxt}` + (used && !port.multi ? ` — ligado a ${byId(used.to) ? byId(used.to).name : ''}` : (NODE_DEFS[node.type] ? ' — livre: ligue um cabo ou coloque TRAVA LOCK' : ' — clique para puxar um cabo'));
+        b.title = `${port.label}${lossTxt}` + (used && !port.multi ? ` — ligado a ${byId(used.to) ? byId(used.to).name : ''}` : (needLock ? ' — livre: ligue um cabo ou coloque TRAVA LOCK' : ' — clique para puxar um cabo'));
       }
       b.className = cls;
       b.style.left = (pos.lx - 8) + 'px';
@@ -1872,7 +2422,7 @@
           </svg>
         </div>`;
     }
-    const passiveSVG = n => isLock(n.type) ? renderLockSVG(n) : isDC(n.type) ? renderDCSVG(n) : isAtt(n.type) ? renderAttSVG(n) : isIso(n.type) ? renderIsoSVG(n) : renderSplitterSVG(n);
+    const passiveSVG = n => n.type === 'spl12' ? renderSplSVG(n) : isLock(n.type) ? renderLockSVG(n) : isDC(n.type) ? renderDCSVG(n) : isAtt(n.type) ? renderAttSVG(n) : isIso(n.type) ? renderIsoSVG(n) : renderSplitterSVG(n);
 
     function svgEl(tag, attrs) {
       const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -1899,6 +2449,7 @@
         let strokeWidth = 3;
         if (conn.cableType === 'RG6 Preto') strokeColor = theme === 'light' ? '#1e293b' : '#475569';
         else if (conn.cableType === 'RG11') { strokeColor = theme === 'light' ? '#6366f1' : '#818cf8'; strokeWidth = 5; }
+        else if (isGponCable(conn.cableType)) { const g = GPON_CABLES[conn.cableType]; strokeColor = theme === 'light' ? g.light : g.color; strokeWidth = g.width; }
 
         const selected = selectedConnectionId === conn.id;
         const pick = (e) => { e.stopPropagation(); linkSource = null; selectConnection(conn.id); };
@@ -1914,7 +2465,7 @@
         svg.appendChild(hit);
 
         // Etiqueta no meio do cabo (ponto médio da curva)
-        if (!selected && (!showCableLabels || !(Number(conn.length) > 0))) return;   // ligação direta (0 m) não mostra etiqueta
+        if (!selected && (!showCableLabels || !(Number(conn.length) > 0 || isGponCable(conn.cableType)))) return;   // ligação direta (0 m) não mostra etiqueta
         const label = cableLabel(conn);
         const w = label.length * 6.6 + 14;
 
@@ -2020,7 +2571,7 @@
         c1, c2
       };
     }
-    const cableLabel = c => Number(c.length) > 0 ? `${c.length}m ${c.cableType}` : 'direto';
+    const cableLabel = c => isGponCable(c.cableType) ? gponCableLabel(c) : Number(c.length) > 0 ? `${c.length}m ${c.cableType}` : 'direto';
 
     // --- SELECTION & PROPERTIES ---
     function drawPendingCable(svg) {
@@ -2240,11 +2791,11 @@
         <div>
           <div class="flex items-baseline justify-between text-[11px]">
             <span class="text-slate-400 font-semibold">${m.label}</span>
-            <strong class="font-mono ${ST[m.st].text}">${fmt(m.val)} dBmV</strong>
+            <strong class="font-mono ${ST[m.st].text}">${fmt(m.val)} ${m.unit || 'dBmV'}</strong>
           </div>
           <div class="relative h-2 rounded bg-rose-900/70 mt-1.5">
             <div class="absolute inset-y-0 bg-amber-600" style="left:${pct(m.min)}%; width:${pct(top) - pct(m.min)}%"></div>
-            <div class="absolute inset-y-0 bg-emerald-500 ${noMax ? 'rounded-r' : ''}" style="left:${pct(m.min + mg)}%; width:${pct(noMax ? top : top - mg) - pct(m.min + mg)}%"></div>
+            <div class="absolute inset-y-0 bg-emerald-500 ${noMax ? 'rounded-r' : ''}" style="left:${pct(m.warnBelow != null ? m.warnBelow : m.min + mg)}%; width:${pct(noMax ? top : top - mg) - pct(m.warnBelow != null ? m.warnBelow : m.min + mg)}%"></div>
             ${marker}
           </div>
           <div class="flex justify-between text-[9px] text-slate-500 font-mono mt-0.5">
@@ -2280,6 +2831,7 @@
     function stepLabel(step) {
       if (step.kind === 'cable') {
         const c = connById(step.connId);
+        if (c && isGponCable(c.cableType)) return c.cableType === 'Cordão óptico' ? 'Cordão óptico' : `Drop ${c.length} m + ${Math.max(0, Math.round(Number(c.conectores) || 0))} conector(es)`;
         return c ? (Number(c.length) > 0 ? `Cabo ${c.length} m ${c.cableType}` : 'Ligação direta (encaixe)') : 'Cabo';
       }
       const node = byId(step.nodeId);
@@ -2296,7 +2848,8 @@
       const start = {};
       keys.forEach(k => start[k] = k === 'tx' ? n.lv[k] - total[k] : n.lv[k] + total[k]);
       const sign = k => (k === 'tx' ? '+' : '−');
-      const head = keys.map(k => `<th class="py-1 px-1 text-right">${k.toUpperCase()}</th>`).join('');
+      const KL = { min: 'MÍN', max: 'MÁX' }, oName = isGpon() ? 'CTO' : 'TAP';
+      const head = keys.map(k => `<th class="py-1 px-1 text-right">${KL[k] || k.toUpperCase()}</th>`).join('');
       const rows = n.path.map(st => `
         <tr class="border-t border-slate-800/70">
           <td class="py-1 pr-1 text-slate-300">${esc(stepLabel(st))}</td>
@@ -2304,17 +2857,17 @@
         </tr>`).join('');
       return `
         <div class="border-t border-slate-800 pt-2">
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Caminho desde o TAP</label>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Caminho desde ${oName === 'CTO' ? 'a CTO' : 'o TAP'}</label>
           <table class="w-full text-[10px]">
             <thead><tr class="text-slate-500"><th class="text-left font-semibold py-1">Trecho</th>${head}</tr></thead>
             <tbody>
               <tr class="border-t border-slate-800/70">
-                <td class="py-1 pr-1 text-sky-300 font-semibold">Nível no TAP</td>
+                <td class="py-1 pr-1 text-sky-300 font-semibold">${oName === 'CTO' ? 'Potência na CTO' : 'Nível no TAP'}</td>
                 ${keys.map(k => `<td class="py-1 px-1 text-right font-mono text-sky-300">${start[k].toFixed(1)}</td>`).join('')}
               </tr>
               ${rows}
               <tr class="border-t border-slate-700">
-                <td class="py-1 pr-1 text-slate-100 font-bold">No equipamento</td>
+                <td class="py-1 pr-1 text-slate-100 font-bold">${oName === 'CTO' ? 'Na ONT' : 'No equipamento'}</td>
                 ${keys.map(k => `<td class="py-1 px-1 text-right font-mono text-slate-100 font-bold">${n.lv[k].toFixed(1)}</td>`).join('')}
               </tr>
             </tbody>
@@ -2371,9 +2924,9 @@
 
     function endpointPropsHTML(n) {
       const d = diagnose(n);
-      const keys = ['ca', 'cb', 'rx', 'tx'];
+      const keys = n.type === 'ont' ? ['min', 'max'] : ['ca', 'cb', 'rx', 'tx'];
       return `
-        ${pointSignalsHTML(n)}
+        ${n.type === 'ont' ? '' : pointSignalsHTML(n)}
         <div class="space-y-2 border-t border-slate-800 pt-2">
           <div class="flex items-center justify-between">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diagnóstico de Sinal</label>
@@ -2461,7 +3014,7 @@
               ${statusBadge(d.status)}
             </div>
             <div class="font-mono text-[10px] text-slate-400 mt-1">
-              ${d.metrics.map(m => `${m.key.toUpperCase()} <span class="${ST[m.st].text} font-bold">${fmt(m.val)}</span>`).join(' · ')}
+              ${d.metrics.map(m => `${m.short || m.key.toUpperCase()} <span class="${ST[m.st].text} font-bold">${fmt(m.val)}</span>`).join(' · ')}
             </div>
             ${d.status !== 'ok' && (d.summary || d.notes[0]) ? `<p class="text-[10px] text-slate-400 mt-1 leading-snug">${esc(d.notes[0] || d.summary)}</p>` : ''}
             ${d.suggestions.length ? `<p class="text-[10px] text-sky-400 mt-1 font-semibold">${d.suggestions.length} sugest${d.suggestions.length > 1 ? 'ões' : 'ão'} de correção →</p>` : ''}
@@ -2490,7 +3043,7 @@
 
           ${eps.length ? `<ul class="space-y-1.5">${list}</ul>` : `<p class="text-xs text-slate-500 text-center py-4">Nenhum equipamento de cliente no projeto.</p>`}
 
-          <div class="border-t border-slate-800 pt-2 space-y-2">
+          ${isGpon() ? gponLimitsHTML() : `<div class="border-t border-slate-800 pt-2 space-y-2">
             <div class="flex items-center justify-between">
               <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Níveis padrão (dBmV)</label>
               <span class="text-[10px] text-slate-500"><i class="fa-solid fa-lock"></i> fixos</span>
@@ -2501,7 +3054,7 @@
               ${lim('caMin', 'CA mín')}${lim('cbMin', 'CB mín')}
             </div>
             <p class="text-[10px] text-slate-500 leading-snug">Padrão fixo para todos os equipamentos (não pode ser alterado). Dentro do padrão = verde; fora = vermelho.</p>
-          </div>
+          </div>`}
         </div>
       `;
     }
@@ -2542,7 +3095,7 @@
               </div>`;
             })()}
 
-            ${n.type === 'tap' ? `
+            ${isCTO(n) ? ctoPanelHTML(n) : n.type === 'tap' ? `
               <div class="space-y-2 border-t border-slate-800 pt-2">
                 <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">Níveis de Sinal de Origem (TAP)</label>
                 <div class="grid grid-cols-2 gap-1.5 text-xs">
@@ -2569,9 +3122,11 @@
             ` : ''}
 
             ${isEndpoint(n) ? endpointPropsHTML(n) : ''}
-            ${NODE_DEFS[n.type] ? passivePropsHTML(n) : ''}
+            ${n.type === 'spl12' ? splPropsHTML(n) : NODE_DEFS[n.type] ? passivePropsHTML(n) : ''}
           </div>
         `;
+      } else if (selectedConnectionId && connById(selectedConnectionId) && isGponCable(connById(selectedConnectionId).cableType)) {
+        panel.innerHTML = gponCablePanelHTML(connById(selectedConnectionId));
       } else if (selectedConnectionId && connById(selectedConnectionId)) {
         const c = connById(selectedConnectionId);
         const src = byId(c.from), dst = byId(c.to);
@@ -2725,6 +3280,7 @@
 
     function updateCableType(val) {
       const c = connById(selectedConnectionId);
+      if (c && isGponCable(c.cableType) !== isGponCable(val)) { renderProperties(); return; }
       if (c && val === 'RG11' && rg11Problem(byId(c.from), c.length)) {
         showToast(rg11Problem(byId(c.from), c.length), 'warning');
         renderProperties();
@@ -3068,9 +3624,10 @@
     // --- DESFAZER / REFAZER E SALVAMENTO AUTOMÁTICO ---
     function stateJSON() {
       return JSON.stringify({
+        mode: projectMode,
         limits,
-        nodes: nodes.map(n => ({ id: n.id, type: n.type, name: n.name, x: Math.round(n.x * 10) / 10, y: Math.round(n.y * 10) / 10, rot: n.rot || 0, signals: n.signals || {}, inSide: n.inSide || 'auto', outSide: n.outSide || 'auto', ...(n.type === 'tap' ? { vias: tapVias(n), ...(isDG(n) ? { model: 'dg' } : {}) } : {}) })),
-        connections: connections.map(c => ({ id: c.id, from: c.from, fromPort: c.fromPort, to: c.to, cableType: c.cableType, length: c.length }))
+        nodes: nodes.map(n => ({ id: n.id, type: n.type, name: n.name, x: Math.round(n.x * 10) / 10, y: Math.round(n.y * 10) / 10, rot: n.rot || 0, signals: n.signals || {}, inSide: n.inSide || 'auto', outSide: n.outSide || 'auto', ...(n.type === 'tap' ? { vias: tapVias(n), ...(isDG(n) ? { model: 'dg' } : isCTO(n) ? { model: 'cto', tec: n.tec || 'GPON' } : {}) } : {}) })),
+        connections: connections.map(c => ({ id: c.id, from: c.from, fromPort: c.fromPort, to: c.to, cableType: c.cableType, length: c.length, ...(c.conectores != null ? { conectores: c.conectores } : {}) }))
       });
     }
     function scheduleCommit() {
@@ -3096,6 +3653,7 @@
       const d = JSON.parse(st);
       restoring = true;
       closeLengthPopup();
+      if ((d.mode === 'gpon' ? 'gpon' : 'hfc') !== projectMode) setModeQuiet(d.mode);
       nodes = d.nodes;
       connections = d.connections;
       limits = { ...DEFAULT_LIMITS };
@@ -3151,6 +3709,7 @@
       } catch (err) { return null; }
     }
     function applyLoadedState(st) {
+      setModeQuiet(st.mode);
       nodes = st.nodes;
       connections = Array.isArray(st.connections) ? st.connections : [];
       limits = { ...DEFAULT_LIMITS };
@@ -3341,7 +3900,7 @@
       flushCommit();
       const name = nextScenarioName();
       const id = uid('cen');
-      userScenarios.push({ id, name, savedAt: Date.now(), state: { limits: { ...limits }, nodes: [], connections: [] } });
+      userScenarios.push({ id, name, savedAt: Date.now(), state: { mode: projectMode, limits: { ...limits }, nodes: [], connections: [] } });
       saveUserScenarios();
       setActiveScenario(id);
       closeLengthPopup();
@@ -3358,7 +3917,7 @@
       view = { zoom: 1, x: 0, y: 0 };
       applyView();
       refresh();
-      showToast(`${name} criado em branco. Comece pela Origem (TAP ou DG); tudo o que você montar fica salvo nele.`, 'success');
+      showToast(`${name} (${isGpon() ? 'GPON' : 'HFC'}) criado em branco. Comece pela Origem (${isGpon() ? 'CTO' : 'TAP ou DG'}); tudo o que você montar fica salvo nele.`, 'success');
     }
     // Guarda o mapa atual (já organizado) como um cenário novo
     function saveMapAsScenario() {
@@ -3385,6 +3944,7 @@
       if (!sc) return;
       closeMenus();
       const st = JSON.parse(JSON.stringify(sc.state));
+      setModeQuiet(st.mode);
       nodes = st.nodes;
       connections = Array.isArray(st.connections) ? st.connections : [];
       limits = { ...DEFAULT_LIMITS };
@@ -3426,7 +3986,7 @@
         <div class="flex items-center gap-1 rounded-lg hover:bg-slate-800">
           <button data-id="${esc(sc.id)}" onclick="openUserScenario(this.dataset.id)" class="flex-1 min-w-0 text-left px-2 py-1.5 flex items-center gap-2.5">
             ${num(i + 3)}
-            <span class="min-w-0"><b class="block text-xs text-slate-100 truncate">${esc(sc.name)}${sc.id === activeScenarioId ? ' <span class="ml-1 text-[9px] font-bold uppercase text-violet-300 bg-violet-950 border border-violet-700/60 rounded px-1">aberto</span>' : ''}</b><span class="block text-[10px] text-slate-400 truncate">${sc.state.nodes.length ? sc.state.nodes.length + ' componentes' : 'em branco'} · salvo em ${new Date(sc.savedAt).toLocaleDateString('pt-BR')}</span></span>
+            <span class="min-w-0"><b class="block text-xs text-slate-100 truncate">${esc(sc.name)}<span class="ml-1 text-[9px] font-bold uppercase rounded px-1 border ${sc.state && sc.state.mode === 'gpon' ? 'text-emerald-300 bg-emerald-950 border-emerald-700/60' : 'text-sky-300 bg-sky-950 border-sky-700/60'}">${sc.state && sc.state.mode === 'gpon' ? 'GPON' : 'HFC'}</span>${sc.id === activeScenarioId ? ' <span class="ml-1 text-[9px] font-bold uppercase text-violet-300 bg-violet-950 border border-violet-700/60 rounded px-1">aberto</span>' : ''}</b><span class="block text-[10px] text-slate-400 truncate">${sc.state.nodes.length ? sc.state.nodes.length + ' componentes' : 'em branco'} · salvo em ${new Date(sc.savedAt).toLocaleDateString('pt-BR')}</span></span>
           </button>
           <button data-id="${esc(sc.id)}" onclick="renameScenario(this.dataset.id)" title="Renomear" class="shrink-0 w-8 h-8 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-700"><i class="fa-solid fa-pen text-[11px]"></i></button>
           <button data-id="${esc(sc.id)}" onclick="deleteScenario(this.dataset.id)" title="Excluir" class="shrink-0 w-8 h-8 mr-1 rounded-md text-rose-400 hover:text-rose-300 hover:bg-slate-700"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
@@ -3438,8 +3998,10 @@
         </button>
         ${nodes.length ? `<button onclick="saveMapAsScenario()" class="w-full text-left mt-1 px-3 py-1.5 rounded-lg hover:bg-slate-800 text-[11px] text-slate-300 flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-slate-400"></i> ou salvar o mapa atual como cenário</button>` : ''}
         <div class="mt-1 pt-1 border-t border-slate-800 space-y-0.5">
-          ${example(1, 'Cenário 1', 'DG · DC 9 · divisor 1/2 · mini isolators', 'loadScenario1')}
-          ${example(2, 'Cenário 2', 'TAP 4 vias · cable isolator · DC 9 · 1/3D', 'loadScenario2')}
+          ${isGpon() ? example(1, 'Cenário 1 GPON', 'CTO −20 dBm · drop 2 conectores · 1:2 · cordão · ONT', 'loadScenarioGpon1')
+            + example(2, 'Cenário 2 XGS-PON', 'CTO 16 · drop 150 m · 1:2 · 2 ONTs', 'loadScenarioGpon2')
+            : example(1, 'Cenário 1', 'DG · DC 9 · divisor 1/2 · mini isolators', 'loadScenario1')
+            + example(2, 'Cenário 2', 'TAP 4 vias · cable isolator · DC 9 · 1/3D', 'loadScenario2')}
           ${mine}
         </div>`;
     }
@@ -3530,7 +4092,7 @@
     }
 
     // Organiza a rede em árvore, da esquerda (TAP) para a direita (equipamentos)
-    const LAYOUT_ROT = { div12: 270, div13: 270, div13d: 270, div18: 270, div14: 90 };
+    const LAYOUT_ROT = { spl12: 270, div12: 270, div13: 270, div13d: 270, div18: 270, div14: 90 };
     function autoLayout() {
       if (!nodes.length) { showToast('Não há componentes para organizar.', 'warning'); return; }
       if (pendingConn) return;
@@ -3772,6 +4334,7 @@
 
     function loadScenario1() {
       setActiveScenario(null);
+      setModeQuiet('hfc');
       nodes = [
         { id: 'tap', type: 'tap', model: 'dg', name: 'DG', vias: 4, x: 24, y: 90, signals: { ca: 15.0, cb: 13.0, rx: 11.0, tx: 41.0 } },
         { id: 'dc9', type: 'dc9', name: 'DC 9 dB', x: 290, y: 200, signals: {} },
@@ -3794,6 +4357,7 @@
 
     function loadScenario2() {
       setActiveScenario(null);
+      setModeQuiet('hfc');
       nodes = [
         { id: 'tap', type: 'tap', name: tapName(4), vias: 4, x: 24, y: 90, signals: { ca: 18.0, cb: 15.0, rx: 13.0, tx: 39.0 } },
         { id: 'dc9', type: 'dc9', name: 'DC 9 dB', x: 290, y: 200, signals: {} },
@@ -3845,6 +4409,7 @@
 
     // --- REPORT & EXPORT LOGIC ---
     function generateProjectReport() {
+      if (isGpon()) return generateGponReport();
       recalculateSignals();
       closeReportModal();
 
@@ -4011,7 +4576,7 @@
         if (!f || !t) return;
         if ((dockedMini(f) && dockedMini(f).id === t.id) || dockedLock(t)) return;
         const { d, midX, midY } = cableGeom(portPos(f, c.fromPort), portPos(t, 'in'));
-        const col = c.cableType === 'RG6 Preto' ? '#334155' : c.cableType === 'RG11' ? '#6366f1' : '#0ea5e9';
+        const col = isGponCable(c.cableType) ? GPON_CABLES[c.cableType].light : c.cableType === 'RG6 Preto' ? '#334155' : c.cableType === 'RG11' ? '#6366f1' : '#0ea5e9';
         cables += `<path d="${d}" stroke="${col}" stroke-width="${c.cableType === 'RG11' ? 5 : 3}" fill="none" stroke-linecap="round"/>`;
         const lab = cableLabel(c), w = lab.length * 6.6 + 14;
         labels += `<rect x="${midX - w / 2}" y="${midY - 11}" width="${w}" height="22" rx="5" fill="#ffffff" stroke="#94a3b8"/><text x="${midX}" y="${midY + 4}" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">${esc(lab)}</text>`;
@@ -4025,7 +4590,7 @@
         }
         const tap = n.type === 'tap';
         const d = tap ? null : diagnose(n, false);
-        const stroke = tap ? (originAlert(n) ? '#d97706' : isDG(n) ? '#7c3aed' : '#0284c7') : COL[d.status];
+        const stroke = tap ? (originAlert(n) ? '#d97706' : isDG(n) ? '#7c3aed' : isCTO(n) ? '#059669' : '#0284c7') : COL[d.status];
         const v = tap ? n.signals : (n.lv || {});
         const val = k => tap ? fmt(sigVal(v[k])) : fmt(v[k]);
         const colOf = k => tap ? '#0f172a' : COL[d.metrics.find(m => m.key === k).st];
@@ -4033,8 +4598,8 @@
         parts += `<g>
           <rect x="${n.x}" y="${n.y}" width="${sz.w}" height="${sz.h}" rx="10" fill="${tap ? '#f0f9ff' : '#f8fafc'}" stroke="${stroke}" stroke-width="2"/>
           <text x="${n.x + 12}" y="${n.y + 22}" font-size="13" font-weight="800" fill="#0f172a">${esc(n.name)}</text>
-          <text x="${n.x + 12}" y="${n.y + 37}" font-size="9.5" fill="#475569">${tap ? `${isDG(n) ? 'DG · ' : ''}Origem · ${tapVias(n)} vias (${connections.filter(c => c.from === n.id).length} em uso)` : esc(EQUIP[n.type].label)}</text>
-          ${line('ca', 'cb', n.y + 58)}${line('rx', 'tx', n.y + 76)}
+          <text x="${n.x + 12}" y="${n.y + 37}" font-size="9.5" fill="#475569">${tap ? `${isDG(n) ? 'DG · ' : isCTO(n) ? 'CTO/NAP · ' + esc(n.tec || 'GPON') + ' · ' : ''}Origem · ${tapVias(n)} ${isCTO(n) ? 'portas' : 'vias'} (${connections.filter(c => c.from === n.id).length} em uso)` : esc(EQUIP[n.type].label)}</text>
+          ${isGpon() ? gponReportLines(n, d) : line('ca', 'cb', n.y + 58) + line('rx', 'tx', n.y + 76)}
           ${tap ? (originAlert(n) ? `<text x="${n.x + sz.w - 10}" y="${n.y + sz.h - 10}" font-size="10" font-weight="800" fill="#d97706" text-anchor="end">ALERTA TX</text>` : '') : `<text x="${n.x + sz.w - 10}" y="${n.y + sz.h - 10}" font-size="10" font-weight="800" fill="${stroke}" text-anchor="end">${ST[d.status].report}</text>`}
         </g>`;
       });
@@ -4051,8 +4616,9 @@
       const data = {
         version: 2,
         appVersion: 'Versão Prévia ' + APP_VERSION,
+        mode: projectMode,
         limits,
-        nodes: nodes.map(n => ({ id: n.id, type: n.type, name: n.name, x: n.x, y: n.y, rot: n.rot || 0, signals: n.signals || {}, inSide: n.inSide || 'auto', outSide: n.outSide || 'auto', ...(n.type === 'tap' ? { vias: tapVias(n), ...(isDG(n) ? { model: 'dg' } : {}) } : {}) })),
+        nodes: nodes.map(n => ({ id: n.id, type: n.type, name: n.name, x: n.x, y: n.y, rot: n.rot || 0, signals: n.signals || {}, inSide: n.inSide || 'auto', outSide: n.outSide || 'auto', ...(n.type === 'tap' ? { vias: tapVias(n), ...(isDG(n) ? { model: 'dg' } : isCTO(n) ? { model: 'cto', tec: n.tec || 'GPON' } : {}) } : {}) })),
         connections
       };
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
@@ -4080,7 +4646,14 @@
         n.signals = n.signals || {};
         if (!SIDE_LABEL[n.inSide]) n.inSide = 'auto';
         if (!SIDE_LABEL[n.outSide]) n.outSide = 'auto';
-        if (n.type === 'tap') {
+        if (n.type === 'tap' && n.model === 'cto') {
+          const count = (connections || []).filter(c => c && c.from === n.id).length;
+          n.vias = CTO_VIAS.includes(Number(n.vias)) ? Number(n.vias) : (CTO_VIAS.find(v => v >= count) || 16);
+          if (isDefaultCtoName(n.name)) n.name = ctoName(n.vias);
+          n.tec = n.tec === 'XGS-PON' ? 'XGS-PON' : 'GPON';
+          const pv = sigVal(n.signals.pot);
+          n.signals = { pot: pv == null ? '' : pv };
+        } else if (n.type === 'tap') {
           if (n.model !== 'dg') delete n.model;
           const count = (connections || []).filter(c => c && c.from === n.id).length;
           if (!TAP_VIAS.includes(Number(n.vias))) n.vias = TAP_VIAS.find(v => v >= count) || 8;
@@ -4115,7 +4688,7 @@
         used.add(port.id);
         inputs.add(dst.id);
         const len = Number(c.length);
-        kept.push({ id: c.id || ('conn_' + i), from: src.id, fromPort: port.id, to: dst.id, cableType: isDG(src) ? DG_CABLE : (cableAttenuation[c.cableType] ? c.cableType : 'RG6'), length: isNaN(len) || len < 0 ? 10 : len });
+        kept.push({ id: c.id || ('conn_' + i), from: src.id, fromPort: port.id, to: dst.id, cableType: isGpon() ? (isGponCable(c.cableType) ? c.cableType : 'Drop') : isDG(src) ? DG_CABLE : (cableAttenuation[c.cableType] ? c.cableType : 'RG6'), length: isNaN(len) || len < 0 ? 10 : len, ...(isGpon() && c.cableType !== 'Cordão óptico' ? { conectores: Math.max(0, Math.min(20, Math.round(Number(c.conectores)) || 0)) } : {}) });
       });
       connections = kept;
       limits = { ...DEFAULT_LIMITS };   // níveis padrão fixos
@@ -4136,6 +4709,7 @@
         try {
           const parsed = JSON.parse(e.target.result);
           if (Array.isArray(parsed.nodes) && Array.isArray(parsed.connections)) {
+            setModeQuiet(parsed.mode);
             nodes = parsed.nodes;
             connections = parsed.connections;
             limits = { ...DEFAULT_LIMITS };
