@@ -1,10 +1,10 @@
-# Simulador HFC Pro
+# Simulador PRO HFC/G-PON/XGS-PON
 
-**Versão Prévia 0.31** · by BRENDLER™
+**Versão Prévia 0.32** · by BRENDLER™
 
-Simulador de projetos de rede coaxial (TV e banda larga HFC) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
+Simulador de projetos de rede coaxial (TV e banda larga HFC) e de fibra óptica (GPON / XGS-PON) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
-**Usar online:** https://simulador-hfc-pro.pages.dev
+**Usar online:** https://simulador-pro-hfc-gpon-xgspon.pages.dev
 
 ## O que ele faz
 
