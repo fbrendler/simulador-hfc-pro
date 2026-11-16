@@ -164,7 +164,7 @@
     <div class="flex items-center gap-3">
       <svg viewBox="200 30 740 910" class="h-9 w-auto shrink-0"  aria-label="Brendler" role="img"><circle cx="266" cy="143" r="51" fill="var(--logo-main)"/><circle cx="266" cy="512" r="51" fill="var(--logo-main)"/><circle cx="266" cy="880" r="51" fill="var(--logo-main)"/><circle cx="389" cy="143" r="51" fill="var(--logo-main)"/><circle cx="389" cy="512" r="51" fill="var(--logo-main)"/><circle cx="389" cy="880" r="51" fill="var(--logo-main)"/><circle cx="512" cy="143" r="51" fill="var(--logo-main)"/><circle cx="512" cy="512" r="51" fill="var(--logo-main)"/><circle cx="512" cy="880" r="51" fill="var(--logo-main)"/><circle cx="635" cy="143" r="51" fill="var(--logo-main)"/><circle cx="635" cy="512" r="51" fill="var(--logo-main)"/><circle cx="635" cy="880" r="51" fill="var(--logo-main)"/><circle cx="266" cy="266" r="51" fill="var(--logo-main)"/><circle cx="266" cy="389" r="51" fill="var(--logo-main)"/><circle cx="266" cy="635" r="51" fill="var(--logo-main)"/><circle cx="266" cy="758" r="51" fill="var(--logo-main)"/><circle cx="758" cy="266" r="51" fill="var(--logo-accent)"/><circle cx="758" cy="389" r="51" fill="var(--logo-main)"/><circle cx="758" cy="635" r="51" fill="var(--logo-main)"/><circle cx="758" cy="758" r="51" fill="var(--logo-accent)"/><circle cx="886" cy="87" r="36" fill="var(--logo-accent)"/></svg>
       <div>
-        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.30</span></h1>
+        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.31</span></h1>
         <p id="brand-sub" class="text-[10px] text-slate-400 font-medium"><span id="brand-mode">Projeto de TV & Banda Larga Coaxial</span> · <b class="text-slate-300 tracking-wide">by BRENDLER™</b> <span id="autosave-status" class="text-slate-500 ml-1"></span></p>
       </div>
     </div>
@@ -279,7 +279,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.30';   // Versão Prévia
+    const APP_VERSION = '0.31';   // Versão Prévia
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
     // --- STATE VARIABLES ---
@@ -418,6 +418,15 @@
       });
     })();
     // GPON: divisor óptico 1:2 (PLC)
+    // GPON: PTO (ponto de terminação óptica): caixinha branca vertical, 1 entrada e 1 saída, sem rotação
+    passiveLosses.pto = { out: 0 };
+    NODE_DEFS.pto = {
+      label: 'PTO', w: 66, vbW: 60, vbH: 110, fixed: true,
+      in:   { x: 30, y: 5,   dir: 'up' },
+      outs: [{ id: 'out', label: 'SAÍDA', x: 30, y: 105, dir: 'down', loss: 0 }]
+    };
+    const isOptPassive = t => t === 'spl12' || t === 'pto';
+    const noRotate = n => !!(NODE_DEFS[n.type] && NODE_DEFS[n.type].fixed);
     passiveLosses.spl12 = { out: 3.5 };
     NODE_DEFS.spl12 = {
       label: 'Divisor 1:2', w: 150, vbW: 140, vbH: 90,
@@ -704,6 +713,16 @@
           <div class="mt-2 flex justify-between items-center gap-1 text-[12px] [&>span]:text-[11px]"><span class="text-slate-500">dBm</span>${statusBadge(d.status)}</div>
         </div>`;
     }
+    function renderPTOSVG(n) {
+      return `<svg viewBox="0 0 60 110" width="66" class="block overflow-visible">
+        <rect x="22" y="0" width="16" height="12" rx="3" fill="#16a34a"/>
+        <rect x="22" y="98" width="16" height="12" rx="3" fill="#16a34a"/>
+        <rect x="6" y="10" width="48" height="90" rx="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="2.5"/>
+        <rect x="14" y="20" width="32" height="5" rx="2.5" fill="#cbd5e1"/>
+        <text x="30" y="62" fill="#0f172a" font-size="15" font-weight="800" text-anchor="middle">PTO</text>
+        <circle cx="30" cy="82" r="3" fill="#22c55e"/>
+      </svg>`;
+    }
     function renderSplSVG(n) {
       return `<svg viewBox="0 0 140 90" width="150" class="block overflow-visible">
         <rect x="10" y="16" width="120" height="58" rx="9" fill="#0f172a" stroke="#22c55e" stroke-width="2.5"/>
@@ -761,17 +780,17 @@
           ? `<button data-id="${esc(c.id)}" onclick="selectConnection(this.dataset.id)" class="text-[10px] text-sky-300 hover:text-sky-200 font-semibold text-right truncate max-w-[130px]">→ ${esc(dest ? dest.name : '')}</button>`
           : `<button data-port="${esc(p.id)}" onclick="startLinkFromPanel(this.dataset.port)" class="px-2 py-0.5 rounded bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-700 text-emerald-300 text-[10px] font-bold">Ligar fibra</button>`;
         return `<li class="bg-slate-950 border border-slate-800 rounded-lg p-2"><div class="flex items-center justify-between gap-2">
-          <span class="text-[11px] font-semibold text-slate-200">${esc(p.label)} <span class="font-mono text-amber-400">−${String(p.loss).replace('.', ',')} dB</span></span>${right}</div></li>`;
+          <span class="text-[11px] font-semibold text-slate-200">${esc(p.label)} <span class="font-mono text-amber-400">${p.loss ? '−' + String(p.loss).replace('.', ',') : '0'} dB</span></span>${right}</div></li>`;
       }).join('');
       return `
-        <div>
+        ${noRotate(n) ? `<p class="text-[11px] text-slate-300 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 leading-snug"><b>PTO</b>: caixinha de terminação óptica, sempre na vertical. Entrada em cima, saída embaixo, sem perda própria (os conectores entram na quantidade de cada fibra).</p>` : `<div>
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Rotação <span class="font-mono text-sky-300 normal-case">${n.rot || 0}°</span></label>
           <div class="grid grid-cols-3 gap-1.5">
             <button onclick="rotateSelected(-90)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold"><i class="fa-solid fa-rotate-left"></i> 90°</button>
             <button onclick="rotateSelected(90)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold"><i class="fa-solid fa-rotate-right"></i> 90°</button>
             <button onclick="rotateSelected(0)" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold">Zerar</button>
           </div>
-        </div>
+        </div>`}
         <div class="border-t border-slate-800 pt-2">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Sinal na entrada (dBm)</label>
           ${lv && lv.min != null ? `<div class="grid grid-cols-2 gap-1 font-mono text-[10px] text-center">
@@ -1117,6 +1136,9 @@
       { id: 'passivos', label: 'Passivos', icon: 'fa-code-branch', groups: [
         { label: 'Divisor óptico', items: [
           { type: 'spl12', name: 'Divisor 1:2', tag: '3,5 dB', info: 'Divisor óptico 1:2 (PLC): 2 saídas, atenuação de 3,5 dB' }
+        ] },
+        { label: 'Terminação óptica', items: [
+          { type: 'pto', name: 'PTO', tag: 'vertical · 0 dB', info: 'PTO: caixinha branca de terminação/emenda, sempre na vertical, com 1 entrada e 1 saída. Sem perda própria: os conectores entram na quantidade de cada fibra' }
         ] }
       ] },
       { id: 'cabos', label: 'Fibras', icon: 'fa-bezier-curve', groups: [
@@ -1991,7 +2013,7 @@
     function freePassivePorts() {
       const out = [];
       nodes.forEach(n => {
-        if (!NODE_DEFS[n.type] || isLock(n.type) || n.type === 'spl12') return;   // divisor óptico: saída livre não precisa de TRAVA LOCK
+        if (!NODE_DEFS[n.type] || isLock(n.type) || isOptPassive(n.type)) return;   // divisor óptico: saída livre não precisa de TRAVA LOCK
         NODE_DEFS[n.type].outs.forEach(pt => { if (!portConn(n.id, pt.id)) out.push({ node: n, port: pt }); });
       });
       return out;
@@ -2082,6 +2104,7 @@
         else if (node.type === 'tap') host.innerHTML = renderTAP(node);
         else if (node.type === 'ont') host.innerHTML = renderONT(node);
         else if (node.type === 'spl12') host.innerHTML = renderSplSVG(node);
+        else if (node.type === 'pto') host.innerHTML = renderPTOSVG(node);
         else if (node.type === 'modem') host.innerHTML = renderEMTA3896(node);
         else if (EQUIP[node.type]) host.innerHTML = renderTV(node);
         else if (isDiv(node.type)) host.innerHTML = renderSplitterSVG(node);
@@ -2101,7 +2124,7 @@
         outPorts(node).forEach(p => host.appendChild(makePortEl(node, p.id, p, false)));
 
         // Alça de rotação (aparece no passivo selecionado)
-        if (passive && selectedNodeId === node.id && selection.size < 2) {
+        if (passive && !noRotate(node) && selectedNodeId === node.id && selection.size < 2) {
           const h = document.createElement('div');
           h.className = 'rot-handle';
           h.title = 'Arraste para girar (passos de 15°). Tecla R gira 90°.';
@@ -2124,7 +2147,7 @@
       } else {
         const used = portConn(node.id, portId);
         const isSrc = linkSource && linkSource.nodeId === node.id && linkSource.portId === portId;
-        const needLock = NODE_DEFS[node.type] && node.type !== 'spl12';
+        const needLock = NODE_DEFS[node.type] && !isOptPassive(node.type);
         cls += isSrc ? 'port-src' : (used && !port.multi ? 'port-used' : (needLock ? 'port-warn' : 'port-free'));
         const lossTxt = port.loss ? ` · −${port.loss} dB` : '';
         b.title = `${port.label}${lossTxt}` + (used && !port.multi ? ` — ligado a ${byId(used.to) ? byId(used.to).name : ''}` : (needLock ? ' — livre: ligue um cabo ou coloque TRAVA LOCK' : ' — clique para puxar um cabo'));
@@ -2444,7 +2467,7 @@
           </svg>
         </div>`;
     }
-    const passiveSVG = n => n.type === 'spl12' ? renderSplSVG(n) : isLock(n.type) ? renderLockSVG(n) : isDC(n.type) ? renderDCSVG(n) : isAtt(n.type) ? renderAttSVG(n) : isIso(n.type) ? renderIsoSVG(n) : renderSplitterSVG(n);
+    const passiveSVG = n => n.type === 'pto' ? renderPTOSVG(n) : n.type === 'spl12' ? renderSplSVG(n) : isLock(n.type) ? renderLockSVG(n) : isDC(n.type) ? renderDCSVG(n) : isAtt(n.type) ? renderAttSVG(n) : isIso(n.type) ? renderIsoSVG(n) : renderSplitterSVG(n);
 
     function svgEl(tag, attrs) {
       const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -3146,7 +3169,7 @@
             ` : ''}
 
             ${isEndpoint(n) ? endpointPropsHTML(n) : ''}
-            ${n.type === 'spl12' ? splPropsHTML(n) : NODE_DEFS[n.type] ? passivePropsHTML(n) : ''}
+            ${isOptPassive(n.type) ? splPropsHTML(n) : NODE_DEFS[n.type] ? passivePropsHTML(n) : ''}
           </div>
         `;
       } else if (selectedConnectionId && connById(selectedConnectionId) && isGponCable(connById(selectedConnectionId).cableType)) {
@@ -3221,7 +3244,7 @@
     }
 
     function rotateSelected(delta) {
-      const list = selectedIds().map(byId).filter(n => n && NODE_DEFS[n.type]);
+      const list = selectedIds().map(byId).filter(n => n && NODE_DEFS[n.type] && !noRotate(n));
       if (!list.length) return;
       list.forEach(n => { n.rot = delta === 0 ? 0 : (((n.rot || 0) + delta) % 360 + 360) % 360; });
       render();
@@ -4665,7 +4688,7 @@
       nodes.forEach(n => {
         n.x = Number(n.x) || 0;
         n.y = Number(n.y) || 0;
-        n.rot = NODE_DEFS[n.type] ? (Number(n.rot) || 0) : 0;
+        n.rot = NODE_DEFS[n.type] && !noRotate(n) ? (Number(n.rot) || 0) : 0;
         n.name = n.name == null ? n.type : String(n.name);
         n.signals = n.signals || {};
         if (!SIDE_LABEL[n.inSide]) n.inSide = 'auto';
