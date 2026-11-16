@@ -164,7 +164,7 @@
     <div class="flex items-center gap-3">
       <svg viewBox="200 30 740 910" class="h-9 w-auto shrink-0"  aria-label="Brendler" role="img"><circle cx="266" cy="143" r="51" fill="var(--logo-main)"/><circle cx="266" cy="512" r="51" fill="var(--logo-main)"/><circle cx="266" cy="880" r="51" fill="var(--logo-main)"/><circle cx="389" cy="143" r="51" fill="var(--logo-main)"/><circle cx="389" cy="512" r="51" fill="var(--logo-main)"/><circle cx="389" cy="880" r="51" fill="var(--logo-main)"/><circle cx="512" cy="143" r="51" fill="var(--logo-main)"/><circle cx="512" cy="512" r="51" fill="var(--logo-main)"/><circle cx="512" cy="880" r="51" fill="var(--logo-main)"/><circle cx="635" cy="143" r="51" fill="var(--logo-main)"/><circle cx="635" cy="512" r="51" fill="var(--logo-main)"/><circle cx="635" cy="880" r="51" fill="var(--logo-main)"/><circle cx="266" cy="266" r="51" fill="var(--logo-main)"/><circle cx="266" cy="389" r="51" fill="var(--logo-main)"/><circle cx="266" cy="635" r="51" fill="var(--logo-main)"/><circle cx="266" cy="758" r="51" fill="var(--logo-main)"/><circle cx="758" cy="266" r="51" fill="var(--logo-accent)"/><circle cx="758" cy="389" r="51" fill="var(--logo-main)"/><circle cx="758" cy="635" r="51" fill="var(--logo-main)"/><circle cx="758" cy="758" r="51" fill="var(--logo-accent)"/><circle cx="886" cy="87" r="36" fill="var(--logo-accent)"/></svg>
       <div>
-        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.29</span></h1>
+        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador HFC Pro <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.30</span></h1>
         <p id="brand-sub" class="text-[10px] text-slate-400 font-medium"><span id="brand-mode">Projeto de TV & Banda Larga Coaxial</span> · <b class="text-slate-300 tracking-wide">by BRENDLER™</b> <span id="autosave-status" class="text-slate-500 ml-1"></span></p>
       </div>
     </div>
@@ -279,7 +279,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.29';   // Versão Prévia
+    const APP_VERSION = '0.30';   // Versão Prévia
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
     // --- STATE VARIABLES ---
@@ -597,10 +597,25 @@
     };
     // Faixa na ONT/ONU (dBm), fixa: verde de -8 a -25 · atenção de -25 a -27 · fora abaixo de -27 ou acima de -8
     const GPON_LIMITS = { okMin: -25, min: -27, max: -8 };
+    // Fibras: Drop Low Friction (cinza), Cabo Micro Low (branco, com contorno), Fibra Invisível (transparente, autocolante)
+    // 'Drop' continua sendo a chave interna do Drop Low Friction (projetos antigos abrem iguais)
     const GPON_CABLES = {
-      'Drop':          { name: 'Drop (fibra)',  color: '#a3e635', light: '#4d7c0f', width: 3 },
-      'Cordão óptico': { name: 'Cordão óptico', color: '#facc15', light: '#a16207', width: 3 }
+      'Drop':            { name: 'Drop Low Friction', short: 'drop LF',  color: '#9ca3af', light: '#6b7280', width: 4 },
+      'Micro Low':       { name: 'Cabo Micro Low',    short: 'micro low', color: '#f8fafc', light: '#ffffff', width: 3, outline: '#475569' },
+      'Fibra Invisível': { name: 'Fibra Invisível',   short: 'invisível', color: '#cffafe', light: '#0e7490', width: 1.6, halo: '#67e8f9', dash: '1 5' },
+      'Cordão óptico':   { name: 'Cordão óptico',     short: 'cordão',    color: '#facc15', light: '#a16207', width: 3 }
     };
+    // Desenho de um cabo óptico (mesmo visual no mapa, no dock e no relatório)
+    function gponStrokeParts(type, light) {
+      const g = GPON_CABLES[type] || GPON_CABLES.Drop;
+      const parts = [];
+      if (g.halo) parts.push({ stroke: g.halo, w: g.width + 6, op: light ? 0.30 : 0.22 });            // brilho do transparente
+      if (g.outline) parts.push({ stroke: light ? g.outline : '#94a3b8', w: g.width + 2.5, op: 1 });   // contorno do branco
+      parts.push({ stroke: light ? g.light : g.color, w: g.width, op: 1, dash: g.dash });
+      return parts;
+    }
+    const gponPathSVG = (type, d, light) => gponStrokeParts(type, light).map(pt =>
+      `<path d="${d}" stroke="${pt.stroke}" stroke-width="${pt.w}" stroke-opacity="${pt.op}" ${pt.dash ? `stroke-dasharray="${pt.dash}"` : ''} fill="none" stroke-linecap="round"/>`).join('');
     const isGponCable = t => !!GPON_CABLES[t];
     const fmt2 = v => (v == null || isNaN(v)) ? '--' : Number(v).toFixed(2);
     const ctoName = v => `CTO ${v} portas`;
@@ -615,7 +630,7 @@
     function gponCableLabel(c) {
       if (c.cableType === 'Cordão óptico') return Number(c.length) > 0 ? `${c.length}m cordão óptico` : 'cordão óptico';
       const k = Math.max(0, Math.round(Number(c.conectores) || 0));
-      return `${c.length}m drop · ${k} con.`;
+      return `${c.length}m ${(GPON_CABLES[c.cableType] || GPON_CABLES.Drop).short} · ${k} con.`;
     }
     function gponMetrics(n) {
       const lv = n.lv, L = GPON_LIMITS;
@@ -803,10 +818,11 @@
             </div>` : ''}
           </div>
           <p class="text-[10px] text-slate-500 leading-snug">${drop
-            ? `Drop: fibra ${String(GPON.fibra.min).replace('.', ',')} a ${String(GPON.fibra.max).replace('.', ',')} dB/km pela metragem + cada conector ${String(GPON.conector.min).replace('.', ',')} a ${String(GPON.conector.max).replace('.', ',')} dB.`
+            ? `${GPON_CABLES[c.cableType].name}: fibra ${String(GPON.fibra.min).replace('.', ',')} a ${String(GPON.fibra.max).replace('.', ',')} dB/km pela metragem + cada conector ${String(GPON.conector.min).replace('.', ',')} a ${String(GPON.conector.max).replace('.', ',')} dB.`
             : `Cordão óptico: perda fixa de ${String(GPON.cordao.min).replace('.', ',')} a ${String(GPON.cordao.max).replace('.', ',')} dB (conectores inclusos). O comprimento é só para o levantamento de material.`}</p>
           <div class="border-t border-slate-800 pt-2">
             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Atenuação nesta ligação (dB)</label>
+            ${drop ? `<div class="mb-1.5 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1"><svg viewBox="0 0 200 16" class="w-full h-4">${gponPathSVG(c.cableType, 'M 6 8 L 194 8', theme === 'light')}</svg></div>` : ''}
             <div class="grid grid-cols-2 gap-1 font-mono text-[10px] text-center">
               <div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">MÍN</span><strong class="text-slate-200">${fmt2(loss.min)}</strong></div>
               <div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">MÁX</span><strong class="text-slate-200">${fmt2(loss.max)}</strong></div>
@@ -893,7 +909,7 @@
         applyLoadedState(st);
       } else if (m === 'gpon') loadScenarioGpon1();
       else loadScenario1();
-      showToast(m === 'gpon' ? 'Modo GPON / XGS-PON: CTO, drop, divisor 1:2, cordão óptico e ONT.' : 'Modo HFC: rede coaxial (TAP/DG, passivos, RG6/RG11).', 'info');
+      showToast(m === 'gpon' ? 'Modo GPON / XGS-PON: CTO, fibras (Drop Low Friction, Micro Low, Invisível), divisor 1:2, cordão óptico e ONT.' : 'Modo HFC: rede coaxial (TAP/DG, passivos, RG6/RG11).', 'info');
     }
 
     // --- Cenários de exemplo GPON ---
@@ -923,7 +939,7 @@
       connections = [
         { id: 'g1', from: 'cto', fromPort: 'out1', to: 'spl', cableType: 'Drop', length: 150, conectores: 2 },
         { id: 'g2', from: 'spl', fromPort: 'out1', to: 'ont1', cableType: 'Cordão óptico', length: 2 },
-        { id: 'g3', from: 'spl', fromPort: 'out2', to: 'ont2', cableType: 'Drop', length: 25, conectores: 2 }
+        { id: 'g3', from: 'spl', fromPort: 'out2', to: 'ont2', cableType: 'Micro Low', length: 25, conectores: 2 }
       ];
       openScenarioView();
     }
@@ -932,10 +948,11 @@
     function generateGponReport() {
       recalculateSignals();
       closeReportModal();
-      let dropM = 0, cordoes = 0, cordaoM = 0, conectores = 0;
+      let cordoes = 0, cordaoM = 0, conectores = 0;
+      const metros = { 'Drop': 0, 'Micro Low': 0, 'Fibra Invisível': 0 };
       connections.forEach(c => {
         if (c.cableType === 'Cordão óptico') { cordoes++; cordaoM += Number(c.length || 0); }
-        else { dropM += Number(c.length || 0); conectores += Math.max(0, Math.round(Number(c.conectores) || 0)); }
+        else { metros[metros[c.cableType] != null ? c.cableType : 'Drop'] += Number(c.length || 0); conectores += Math.max(0, Math.round(Number(c.conectores) || 0)); }
       });
       const endpoints = nodes.filter(isEndpoint).map(n => ({ n, d: diagnose(n) }));
       const counts = {};
@@ -984,12 +1001,12 @@
           <div class="report-map">
             <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">1. Topologia do Projeto</h3>
             <div class="rounded-xl border border-slate-700 overflow-hidden bg-white">${reportMapSVG()}</div>
-            <p class="text-[10px] text-slate-500 mt-2">Desenho organizado automaticamente (CTO à esquerda, ONTs à direita). Verde-limão = drop · amarelo = cordão óptico.</p>
+            <p class="text-[10px] text-slate-500 mt-2">Desenho organizado automaticamente (CTO à esquerda, ONTs à direita). Cinza = Drop Low Friction · branco com contorno = Cabo Micro Low · tracejado azul-claro = Fibra Invisível · amarelo = cordão óptico.</p>
           </div>` : ''}
           <div>
             <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">2. Levantamento de Materiais</h3>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              ${card('Cabo drop', dropM + 'm')}${card('Conectores', conectores + ' un.', 'text-amber-300')}${card('Cordões ópticos', cordoes + ' un.' + (cordaoM ? ` · ${cordaoM}m` : ''))}${card('Componentes', nodes.length + ' un.', 'text-emerald-400')}
+              ${Object.keys(metros).map(t => card(GPON_CABLES[t].name, metros[t] + 'm')).join('')}${card('Conectores', conectores + ' un.', 'text-amber-300')}${card('Cordões ópticos', cordoes + ' un.' + (cordaoM ? ` · ${cordaoM}m` : ''))}${card('Componentes', nodes.length + ' un.', 'text-emerald-400')}
             </div>
             ${countsHTML ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Componentes por modelo</span><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-[11px]">${countsHTML}</div></div>` : ''}
           </div>
@@ -1061,7 +1078,7 @@
     }
 
     // --- DOCK (paleta por categorias) ---
-    const CABLE_STYLE = { 'RG6': '#38bdf8', 'RG6 Preto': '#475569', 'RG11': '#818cf8', 'Drop': '#a3e635', 'Cordão óptico': '#facc15' };
+    const CABLE_STYLE = { 'RG6': '#38bdf8', 'RG6 Preto': '#475569', 'RG11': '#818cf8', 'Drop': '#9ca3af', 'Micro Low': '#e2e8f0', 'Fibra Invisível': '#67e8f9', 'Cordão óptico': '#facc15' };
     const cableInfo = t => { const c = cableAttenuation[t]; return `${c.CA.toFixed(2)} dB/m em CA/RX · ${c.CB.toFixed(2)} em CB · ${c.TX.toFixed(2)} em TX`; };
     const PALETTE = [
       { id: 'passivos', label: 'Passivos', icon: 'fa-code-branch', groups: [
@@ -1104,7 +1121,9 @@
       ] },
       { id: 'cabos', label: 'Fibras', icon: 'fa-bezier-curve', groups: [
         { label: 'Tipo de ligação óptica', items: [
-          { cable: 'Drop', name: 'Drop (fibra)', tag: 'm + conectores', info: 'Cabo drop: ao ligar, informe a distância (m) e quantos conectores; a perda soma fibra (0,25 a 0,35 dB/km) e conectores (0,5 a 0,8 dB cada)' },
+          { cable: 'Drop', name: 'Drop Low Friction', tag: 'cinza', info: 'Drop Low Friction (cinza): ao ligar, informe a distância (m) e quantos conectores; a perda soma fibra (0,25 a 0,35 dB/km) e conectores (0,5 a 0,8 dB cada)' },
+          { cable: 'Micro Low', name: 'Cabo Micro Low', tag: 'branco', info: 'Cabo Micro Low (branco): ao ligar, informe a distância (m) e quantos conectores; mesma conta do drop (fibra 0,25 a 0,35 dB/km + 0,5 a 0,8 dB por conector)' },
+          { cable: 'Fibra Invisível', name: 'Fibra Invisível', tag: 'transparente', info: 'Fibra Invisível (transparente, autocolante): ao ligar, informe a distância (m) e quantos conectores; mesma conta do drop (fibra 0,25 a 0,35 dB/km + 0,5 a 0,8 dB por conector)' },
           { cable: 'Cordão óptico', name: 'Cordão óptico', tag: '1,0 – 1,6 dB', info: 'Cordão óptico (patch cord): perda fixa de 1,0 a 1,6 dB, conectores inclusos' }
         ] }
       ] },
@@ -1131,6 +1150,9 @@
     }
 
     function thumbHTML(item) {
+      if (item.cable && GPON_CABLES[item.cable]) {
+        return `<svg viewBox="0 0 64 40" class="w-16 h-10">${gponPathSVG(item.cable, 'M 4 32 C 24 32, 26 8, 60 8', theme === 'light')}<circle cx="4" cy="32" r="4" fill="#22c55e"/><circle cx="60" cy="8" r="4" fill="#22c55e"/></svg>`;
+      }
       if (item.cable) {
         const w = item.cable === 'RG11' ? 6 : 4;
         return `<svg viewBox="0 0 64 40" class="w-16 h-10"><path d="M 4 32 C 24 32, 26 8, 60 8" fill="none" stroke="${CABLE_STYLE[item.cable]}" stroke-width="${w}" stroke-linecap="round"/><circle cx="4" cy="32" r="4" fill="#cbd5e1"/><circle cx="60" cy="8" r="4" fill="#cbd5e1"/></svg>`;
@@ -1454,10 +1476,10 @@
         const n = byId(linkSource.nodeId);
         const p = n ? portInfo(n, linkSource.portId) : null;
         el.className = 'shrink-0 text-amber-300 font-semibold';
-        el.innerHTML = `<i class="fa-solid fa-plug mr-1"></i>Puxando ${esc(activeCableType)} de ${esc(n ? n.name : '')} · ${esc(p ? p.label : '')}: clique no destino (Esc cancela)`;
+        el.innerHTML = `<i class="fa-solid fa-plug mr-1"></i>Puxando ${esc(GPON_CABLES[activeCableType] ? GPON_CABLES[activeCableType].name : activeCableType)} de ${esc(n ? n.name : '')} · ${esc(p ? p.label : '')}: clique no destino (Esc cancela)`;
       } else {
         el.className = 'shrink-0 text-slate-400';
-        el.innerHTML = `Cabo ativo: ${dot}<b class="text-slate-200">${esc(activeCableType)}</b>`;
+        el.innerHTML = `${isGpon() ? 'Fibra ativa' : 'Cabo ativo'}: ${dot}<b class="text-slate-200">${esc(GPON_CABLES[activeCableType] ? GPON_CABLES[activeCableType].name : activeCableType)}</b>`;
       }
     }
 
@@ -2449,13 +2471,15 @@
         let strokeWidth = 3;
         if (conn.cableType === 'RG6 Preto') strokeColor = theme === 'light' ? '#1e293b' : '#475569';
         else if (conn.cableType === 'RG11') { strokeColor = theme === 'light' ? '#6366f1' : '#818cf8'; strokeWidth = 5; }
-        else if (isGponCable(conn.cableType)) { const g = GPON_CABLES[conn.cableType]; strokeColor = theme === 'light' ? g.light : g.color; strokeWidth = g.width; }
+        const gparts = isGponCable(conn.cableType) ? gponStrokeParts(conn.cableType, theme === 'light') : null;
+        if (gparts) { const top = gparts[gparts.length - 1]; strokeColor = top.stroke; strokeWidth = Math.max(3, gparts[0].w); }
 
         const selected = selectedConnectionId === conn.id;
         const pick = (e) => { e.stopPropagation(); linkSource = null; selectConnection(conn.id); };
 
         if (selected) svg.appendChild(svgEl('path', { d, stroke: '#e0f2fe', 'stroke-width': strokeWidth + 5, 'stroke-opacity': 0.35, fill: 'none', 'stroke-linecap': 'round' }));
-        svg.appendChild(svgEl('path', { d, stroke: strokeColor, 'stroke-width': strokeWidth, fill: 'none', 'stroke-linecap': 'round' }));
+        if (gparts) gparts.forEach(pt => svg.appendChild(svgEl('path', { d, stroke: pt.stroke, 'stroke-width': pt.w, 'stroke-opacity': pt.op, ...(pt.dash ? { 'stroke-dasharray': pt.dash } : {}), fill: 'none', 'stroke-linecap': 'round' })));
+        else svg.appendChild(svgEl('path', { d, stroke: strokeColor, 'stroke-width': strokeWidth, fill: 'none', 'stroke-linecap': 'round' }));
 
         // Área de clique generosa sobre o cabo
         const hit = svgEl('path', { d, stroke: 'transparent', 'stroke-width': 14, fill: 'none' });
@@ -2831,7 +2855,7 @@
     function stepLabel(step) {
       if (step.kind === 'cable') {
         const c = connById(step.connId);
-        if (c && isGponCable(c.cableType)) return c.cableType === 'Cordão óptico' ? 'Cordão óptico' : `Drop ${c.length} m + ${Math.max(0, Math.round(Number(c.conectores) || 0))} conector(es)`;
+        if (c && isGponCable(c.cableType)) return c.cableType === 'Cordão óptico' ? 'Cordão óptico' : `${GPON_CABLES[c.cableType].name} ${c.length} m + ${Math.max(0, Math.round(Number(c.conectores) || 0))} conector(es)`;
         return c ? (Number(c.length) > 0 ? `Cabo ${c.length} m ${c.cableType}` : 'Ligação direta (encaixe)') : 'Cabo';
       }
       const node = byId(step.nodeId);
@@ -3999,7 +4023,7 @@
         ${nodes.length ? `<button onclick="saveMapAsScenario()" class="w-full text-left mt-1 px-3 py-1.5 rounded-lg hover:bg-slate-800 text-[11px] text-slate-300 flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-slate-400"></i> ou salvar o mapa atual como cenário</button>` : ''}
         <div class="mt-1 pt-1 border-t border-slate-800 space-y-0.5">
           ${isGpon() ? example(1, 'Cenário 1 GPON', 'CTO −20 dBm · drop 2 conectores · 1:2 · cordão · ONT', 'loadScenarioGpon1')
-            + example(2, 'Cenário 2 XGS-PON', 'CTO 16 · drop 150 m · 1:2 · 2 ONTs', 'loadScenarioGpon2')
+            + example(2, 'Cenário 2 XGS-PON', 'CTO 16 · drop LF 150 m · 1:2 · micro low · 2 ONTs', 'loadScenarioGpon2')
             : example(1, 'Cenário 1', 'DG · DC 9 · divisor 1/2 · mini isolators', 'loadScenario1')
             + example(2, 'Cenário 2', 'TAP 4 vias · cable isolator · DC 9 · 1/3D', 'loadScenario2')}
           ${mine}
@@ -4577,7 +4601,7 @@
         if ((dockedMini(f) && dockedMini(f).id === t.id) || dockedLock(t)) return;
         const { d, midX, midY } = cableGeom(portPos(f, c.fromPort), portPos(t, 'in'));
         const col = isGponCable(c.cableType) ? GPON_CABLES[c.cableType].light : c.cableType === 'RG6 Preto' ? '#334155' : c.cableType === 'RG11' ? '#6366f1' : '#0ea5e9';
-        cables += `<path d="${d}" stroke="${col}" stroke-width="${c.cableType === 'RG11' ? 5 : 3}" fill="none" stroke-linecap="round"/>`;
+        cables += isGponCable(c.cableType) ? gponPathSVG(c.cableType, d, true) : `<path d="${d}" stroke="${col}" stroke-width="${c.cableType === 'RG11' ? 5 : 3}" fill="none" stroke-linecap="round"/>`;
         const lab = cableLabel(c), w = lab.length * 6.6 + 14;
         labels += `<rect x="${midX - w / 2}" y="${midY - 11}" width="${w}" height="22" rx="5" fill="#ffffff" stroke="#94a3b8"/><text x="${midX}" y="${midY + 4}" fill="#0f172a" font-size="11" font-weight="700" text-anchor="middle">${esc(lab)}</text>`;
       });
