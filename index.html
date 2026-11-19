@@ -43,7 +43,6 @@
     @media (max-height: 560px) {
       header { height: 2.75rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
       header svg { height: 1.75rem !important; }
-      #dock-hintbar { display: none !important; }
       #dock.h-44 { height: 8.25rem !important; }
       #properties-panel { width: 15.5rem !important; padding: 0.5rem !important; }
       #zoom-controls { right: 0.5rem !important; bottom: 0.5rem !important; }
@@ -71,7 +70,73 @@
     html.light header, html.light #dock, html.light #properties-panel { box-shadow: 0 0 0 1px #c3ccd8; }
     html.light .port-in { background: #ffffff; border-color: #475569; }
     html.light .port-free { background: #ecfdf5; border-color: #059669; }
-    @media (max-width: 1439px) { #autosave-status { display: none; } }
+
+    /* Barra de status (largura total) com a assinatura no canto inferior direito */
+    #dock.h-44 { height: 9.25rem; }
+    #status-bar { height: 1.75rem; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 0 0.75rem; font-size: 11px; background: #020617; border-top: 1px solid #1e293b; z-index: 25; }
+    #autosave-status { color: #64748b; font-size: 10px; white-space: nowrap; }
+    #assinatura { display: flex; align-items: center; gap: 0.4rem; padding-left: 0.75rem; border-left: 1px solid #1e293b;
+      color: #94a3b8; font-size: 10px; letter-spacing: 0.04em; white-space: nowrap; }
+    #assinatura b { color: #e2e8f0; font-weight: 800; letter-spacing: 0.08em; }
+    #assinatura .sig-logo { height: 1rem; width: auto; }
+    #sig-versao { font-weight: 700; color: #c4b5fd; background: #2e1065; border: 1px solid rgba(109,40,217,.6); border-radius: 4px; padding: 0 0.35rem; line-height: 1.1rem; letter-spacing: 0; }
+    html.light #sig-versao { color: #5b21b6; background: #ede9fe; border-color: #c4b5fd; }
+    html.light #status-bar { background: #f1f5f9; border-top-color: #c3ccd8; }
+    html.light #assinatura { color: #475569; border-left-color: #c3ccd8; }
+    html.light #assinatura b { color: #0f172a; }
+    @media (max-width: 1100px) { #autosave-status { display: none; } }
+    /* Painel flutuante no canto superior direito do mapa; para acima da barra de zoom */
+    #properties-panel { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 22; max-height: calc(100% - 4.25rem);
+      overflow-y: auto; background: rgba(15, 23, 42, 0.97); border: 1px solid #334155; border-radius: 0.85rem;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); }
+    html.light #properties-panel { background: rgba(255, 255, 255, 0.98); border-color: #c3ccd8; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16); }
+    /* Puxador do painel lateral: sempre visível na borda direita do mapa */
+    #panel-handle { position: absolute; right: 0; top: 50%; transform: translateY(-50%); z-index: 23;
+      display: flex; flex-direction: column; align-items: center; gap: 0.45rem; padding: 0.6rem 0.3rem;
+      background: #0f172a; color: #cbd5e1; border: 1px solid #334155; border-right: none;
+      border-radius: 0.6rem 0 0 0.6rem; box-shadow: -4px 0 14px rgba(0,0,0,.35); cursor: pointer; transition: background .15s, padding .15s; }
+    #panel-handle:hover { background: #1e293b; color: #fff; padding-right: 0.45rem; }
+    #panel-handle .ph-txt { display: none; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase; }
+    #panel-handle .ph-dot { display: none; width: 0.55rem; height: 0.55rem; border-radius: 9999px; background: #10b981; }
+    #panel-handle.fechado { padding: 0.75rem 0.4rem; }
+    #panel-handle.fechado .ph-txt, #panel-handle.fechado .ph-dot { display: block; }
+    #panel-handle .ph-dot.warn { background: #f59e0b; } #panel-handle .ph-dot.bad { background: #e11d48; }
+    html.light #panel-handle { background: #ffffff; color: #334155; border-color: #c3ccd8; box-shadow: -3px 0 10px rgba(15,23,42,.12); }
+    html.light #panel-handle:hover { background: #f1f5f9; color: #0f172a; }
+    .panel-close { width: 1.6rem; height: 1.6rem; border-radius: 0.45rem; display: flex; align-items: center; justify-content: center;
+      color: #94a3b8; border: 1px solid #334155; background: #0f172a; flex-shrink: 0; transition: background .15s, color .15s; }
+    .panel-close:hover { background: #881337; border-color: #be123c; color: #fff; }
+    html.light .panel-close { background: #fff; border-color: #c3ccd8; color: #475569; }
+    html.light .panel-close:hover { background: #e11d48; border-color: #e11d48; color: #fff; }
+    /* Janela "Novo projeto" */
+    #new-project { position: fixed; inset: 0; z-index: 60; background: rgba(2, 6, 23, 0.6); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    #new-project.hidden { display: none; }
+    .np-card { width: 100%; max-width: 24rem; background: #0f172a; border: 1px solid #334155; border-radius: 0.9rem; padding: 1rem; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+    .np-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+    .np-head h2 { font-size: 15px; font-weight: 800; color: #f1f5f9; }
+    .np-list { display: grid; gap: 0.5rem; }
+    .np-opt { display: flex; align-items: flex-start; gap: 0.75rem; width: 100%; text-align: left; padding: 0.65rem 0.8rem; border-radius: 0.65rem;
+      background: #020617; border: 1px solid #1e293b; transition: background .15s, border-color .15s; }
+    .np-opt:hover { background: #1e293b; border-color: #475569; }
+    .np-opt.np-main { border: 2px solid #8b5cf6; }
+    .np-opt i { font-size: 1.1rem; width: 1.3rem; text-align: center; margin-top: 0.1rem; }
+    .np-opt b { display: block; font-size: 13px; color: #f1f5f9; }
+    .np-opt span { display: block; font-size: 11px; color: #94a3b8; line-height: 1.35; margin-top: 0.1rem; }
+    html.light .np-card { background: #ffffff; border-color: #c3ccd8; box-shadow: 0 20px 50px rgba(15,23,42,.2); }
+    html.light .np-head h2, html.light .np-opt b { color: #0f172a; }
+    html.light .np-opt { background: #f8fafc; border-color: #d5dde7; }
+    html.light .np-opt:hover { background: #eef2f7; border-color: #94a3b8; }
+    html.light .np-opt span { color: #475569; }
+    html.light .np-opt.np-main { border-color: #7c3aed; }
+    /* Níveis padrão recolhíveis */
+    details.niveis > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.35rem 0; }
+    details.niveis > summary::-webkit-details-marker { display: none; }
+    details.niveis > summary .chev { transition: transform .15s; margin-right: 0.35rem; font-size: 9px; }
+    details.niveis[open] > summary .chev { transform: rotate(90deg); }
+    @media (max-height: 560px) { #status-bar { height: 1.5rem; } #dock-hint { visibility: hidden; } }
     .canvas-grid {
       background-size: 24px 24px;
       background-image:
@@ -162,10 +227,9 @@
   <!-- TOP BAR -->
   <header class="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-30 shrink-0">
     <div class="flex items-center gap-3">
-      <svg viewBox="200 30 740 910" class="h-9 w-auto shrink-0"  aria-label="Brendler" role="img"><circle cx="266" cy="143" r="51" fill="var(--logo-main)"/><circle cx="266" cy="512" r="51" fill="var(--logo-main)"/><circle cx="266" cy="880" r="51" fill="var(--logo-main)"/><circle cx="389" cy="143" r="51" fill="var(--logo-main)"/><circle cx="389" cy="512" r="51" fill="var(--logo-main)"/><circle cx="389" cy="880" r="51" fill="var(--logo-main)"/><circle cx="512" cy="143" r="51" fill="var(--logo-main)"/><circle cx="512" cy="512" r="51" fill="var(--logo-main)"/><circle cx="512" cy="880" r="51" fill="var(--logo-main)"/><circle cx="635" cy="143" r="51" fill="var(--logo-main)"/><circle cx="635" cy="512" r="51" fill="var(--logo-main)"/><circle cx="635" cy="880" r="51" fill="var(--logo-main)"/><circle cx="266" cy="266" r="51" fill="var(--logo-main)"/><circle cx="266" cy="389" r="51" fill="var(--logo-main)"/><circle cx="266" cy="635" r="51" fill="var(--logo-main)"/><circle cx="266" cy="758" r="51" fill="var(--logo-main)"/><circle cx="758" cy="266" r="51" fill="var(--logo-accent)"/><circle cx="758" cy="389" r="51" fill="var(--logo-main)"/><circle cx="758" cy="635" r="51" fill="var(--logo-main)"/><circle cx="758" cy="758" r="51" fill="var(--logo-accent)"/><circle cx="886" cy="87" r="36" fill="var(--logo-accent)"/></svg>
       <div>
-        <h1 class="font-bold text-sm text-slate-100 leading-tight">Simulador PRO HFC/G-PON/XGS-PON <span class="ml-1 align-middle text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-700/60" title="Versão Prévia">Versão Prévia 0.32</span></h1>
-        <p id="brand-sub" class="text-[10px] text-slate-400 font-medium"><span id="brand-mode">Projeto de TV & Banda Larga Coaxial</span> · <b class="text-slate-300 tracking-wide">by BRENDLER™</b> <span id="autosave-status" class="text-slate-500 ml-1"></span></p>
+        <h1 class="font-bold text-sm text-slate-100 leading-tight whitespace-nowrap">Simulador PRO HFC/G-PON/XGS-PON</h1>
+        <p id="brand-sub" class="text-[10px] text-slate-400 font-medium"><span id="brand-mode">Projeto de TV & Banda Larga Coaxial</span></p>
       </div>
     </div>
 
@@ -175,6 +239,10 @@
         <button id="mode-hfc" onclick="setProjectMode('hfc')" class="px-2.5 py-1.5 bg-sky-600 text-white"><i class="fa-solid fa-tv mr-1"></i>HFC</button>
         <button id="mode-gpon" onclick="setProjectMode('gpon')" class="px-2.5 py-1.5 border-l border-slate-700 bg-slate-800 text-slate-300"><i class="fa-solid fa-lightbulb mr-1"></i>GPON / XGS-PON</button>
       </div>
+      <button onclick="openNewProject()" title="Novo projeto: em branco, pelo exemplo ou abrindo um arquivo" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 mr-1">
+        <i class="fa-solid fa-file-circle-plus"></i>
+        <span>Novo</span>
+      </button>
       <div class="flex items-center gap-1 mr-1">
         <button id="undo-btn" onclick="undo()" title="Desfazer (Ctrl+Z)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-rotate-left"></i></button>
         <button id="redo-btn" onclick="redo()" title="Refazer (Ctrl+Y)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs transition disabled:opacity-40 disabled:cursor-not-allowed"><i class="fa-solid fa-rotate-right"></i></button>
@@ -251,6 +319,16 @@
           <button id="minimap-btn" onclick="toggleMinimap()" title="Minimapa (tecla M)" class="w-7 h-7 rounded-md hover:bg-slate-700 flex items-center justify-center"><i class="fa-solid fa-map text-xs"></i></button>
           <button id="organize-btn" onclick="autoLayout()" title="Organizar automaticamente (Ctrl+Z desfaz)" class="h-7 px-2 rounded-md hover:bg-slate-700 flex items-center justify-center gap-1 text-[11px] font-semibold"><i class="fa-solid fa-sitemap text-xs"></i><span class="hidden sm:inline">Organizar</span></button>
         </div>
+        <!-- PAINEL FLUTUANTE: PROPRIEDADES / DIAGNÓSTICO (altura do conteúdo) -->
+        <aside id="properties-panel" class="w-72 p-3"
+          onmousedown="event.stopPropagation()" onclick="event.stopPropagation()" ondblclick="event.stopPropagation()"
+          onwheel="event.stopPropagation()" ontouchstart="event.stopPropagation()" ondragover="event.stopPropagation()">
+          <div id="properties-content"></div>
+        </aside>
+        <!-- Puxador do painel lateral -->
+        <button id="panel-handle" onclick="togglePanel()" onmousedown="event.stopPropagation()" title="Fechar o painel (P)">
+          <i class="fa-solid fa-chevron-right ph-ico"></i><span class="ph-dot"></span><span class="ph-txt">Diagnóstico</span>
+        </button>
         <!-- Minimapa -->
         <canvas id="minimap" class="absolute left-3 top-3 z-20 rounded-lg border border-slate-700 shadow-xl cursor-pointer" style="touch-action:none; display:none" title="Minimapa: clique ou arraste para navegar"></canvas>
         <!-- Seleção por área (Shift + arrastar) -->
@@ -263,23 +341,38 @@
           <div id="dock-cats" class="w-56 shrink-0 border-r border-slate-800 p-2 grid grid-cols-2 gap-1.5 bg-slate-950/40"></div>
           <div id="dock-items" class="flex-1 flex items-stretch gap-4 px-3 py-2 overflow-x-auto"></div>
         </div>
-        <div id="dock-hintbar" class="h-7 shrink-0 border-t border-slate-800 bg-slate-950/60 px-3 flex items-center justify-between gap-4 text-[11px]">
-          <div id="dock-hint" class="text-slate-300 truncate font-medium"></div>
-          <div id="active-cable-badge" class="shrink-0"></div>
-        </div>
       </footer>
     </div>
 
-    <!-- RIGHT PANEL: PROPRIEDADES / DIAGNÓSTICO -->
-    <aside class="w-72 bg-slate-900/90 border-l border-slate-800 p-3 flex flex-col justify-between overflow-y-auto shrink-0 z-20" id="properties-panel">
-      <div id="properties-content"></div>
-    </aside>
+  </div>
 
+  <!-- BARRA DE STATUS: dica e cabo ativo à esquerda, assinatura no canto inferior direito -->
+  <div id="status-bar">
+    <div id="dock-hint" class="text-slate-300 truncate font-medium"></div>
+    <div class="flex items-center gap-3 shrink-0">
+      <div id="active-cable-badge" class="shrink-0"></div>
+      <span id="autosave-status"></span>
+      <div id="assinatura" title="Simulador PRO HFC/G-PON/XGS-PON · by BRENDLER™">
+        <svg viewBox="200 30 740 910" class="sig-logo"  aria-hidden="true"><circle cx="266" cy="143" r="51" fill="var(--logo-main)"/><circle cx="266" cy="512" r="51" fill="var(--logo-main)"/><circle cx="266" cy="880" r="51" fill="var(--logo-main)"/><circle cx="389" cy="143" r="51" fill="var(--logo-main)"/><circle cx="389" cy="512" r="51" fill="var(--logo-main)"/><circle cx="389" cy="880" r="51" fill="var(--logo-main)"/><circle cx="512" cy="143" r="51" fill="var(--logo-main)"/><circle cx="512" cy="512" r="51" fill="var(--logo-main)"/><circle cx="512" cy="880" r="51" fill="var(--logo-main)"/><circle cx="635" cy="143" r="51" fill="var(--logo-main)"/><circle cx="635" cy="512" r="51" fill="var(--logo-main)"/><circle cx="635" cy="880" r="51" fill="var(--logo-main)"/><circle cx="266" cy="266" r="51" fill="var(--logo-main)"/><circle cx="266" cy="389" r="51" fill="var(--logo-main)"/><circle cx="266" cy="635" r="51" fill="var(--logo-main)"/><circle cx="266" cy="758" r="51" fill="var(--logo-main)"/><circle cx="758" cy="266" r="51" fill="var(--logo-accent)"/><circle cx="758" cy="389" r="51" fill="var(--logo-main)"/><circle cx="758" cy="635" r="51" fill="var(--logo-main)"/><circle cx="758" cy="758" r="51" fill="var(--logo-accent)"/><circle cx="886" cy="87" r="36" fill="var(--logo-accent)"/></svg><span id="sig-versao">Versão Prévia</span><span>by <b>BRENDLER™</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- JANELA "NOVO PROJETO" -->
+  <div id="new-project" class="hidden" onclick="if (event.target === this) closeNewProject()">
+    <div class="np-card" role="dialog" aria-modal="true" aria-labelledby="np-title">
+      <div class="np-head">
+        <h2 id="np-title">Novo projeto</h2>
+        <button onclick="closeNewProject()" class="panel-close" title="Fechar (Esc)"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="np-options" class="np-list"></div>
+    </div>
   </div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.32';   // Versão Prévia
+    const APP_VERSION = '0.33';   // Versão Prévia
+    document.getElementById('sig-versao').textContent = 'Versão Prévia ' + APP_VERSION;
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
     // --- STATE VARIABLES ---
@@ -485,15 +578,31 @@
       return ['ca', 'cb', 'rx', 'tx'].every(k => { const v = sigVal(sg[k]); return v == null || v === 0; });
     }
     function originAlert(n) {
-      if (!n || n.type !== 'tap' || isCTO(n)) return null;
+      if (isCTO(n)) {
+        const pot = sigVal((n.signals || {}).pot);
+        if (pot == null || (pot >= NAP_LIMITS.min && pot <= NAP_LIMITS.max)) return null;
+        return { pot, text: `Potência ${fmtDb(pot)} dBm na ${n.name} (NAP/DIO esperado de ${NAP_LIMITS.max} a ${NAP_LIMITS.min} dBm). Confirme com o power meter.` };
+      }
+      if (!n || n.type !== 'tap') return null;
       const r = ORIGIN_TX[isDG(n) ? 'dg' : 'tap'];
       if (originBlank(n)) return null;
       const tx = sigVal((n.signals || {}).tx);
       if (tx == null || (tx >= r.min && tx <= r.max)) return null;
       return { ...r, tx, text: `TX ${fmtDb(tx)} dBmV no ${n.name} (esperado ${r.min} a ${r.max}). ${r.msg}` };
     }
-    const originAlerts = () => nodes.map(originAlert).filter(Boolean);
-    const DG_CABLE = 'RG6';   // no DG só é permitido cabo RG6 Branco
+    function originLevelAlert(n) {
+      if (!n || n.type !== 'tap' || isCTO(n) || originBlank(n)) return null;
+      const sg = n.signals || {}, ca = sigVal(sg.ca), cb = sigVal(sg.cb), alto = [];
+      if (ca != null && ca > 22) alto.push(`CA ${fmtDb(ca)} (máx. 22)`);
+      if (cb != null && cb > 16) alto.push(`CB ${fmtDb(cb)} (máx. 16)`);
+      if (!alto.length) return null;
+      return { text: `${alto.join(' e ')} dBmV no ${n.name}: possível sinal desalinhado. Faça uso de medidor para confirmar os valores.` };
+    }
+    const originAlerts = () => nodes.flatMap(n => [originAlert(n), originLevelAlert(n)]).filter(Boolean);
+    const DG_CABLE = 'RG6';
+    const ISO_TAIL_M = 0;     // cabo RG6 Branco curto que sai do CABLE ISOLATOR: sem metragem
+    // Cabo drop: sai do TAP Rede externa (não DG/CTO) em RG6 Preto ou RG11 e sempre leva CABLE ISOLATOR
+    const isDropFromTap = c => { const f = byId(c.from); return !!f && f.type === 'tap' && !isDG(f) && !isCTO(f) && (c.cableType === 'RG6 Preto' || c.cableType === 'RG11'); };   // no DG só é permitido cabo RG6 Branco
     // RG11: só no cabo de entrada (o que sai do TAP Rede externa) e só acima de 80 m.
     // Depois do CABLE ISOLATOR (ou de qualquer outra peça) não pode.
     const RG11_MIN = 80;
@@ -604,8 +713,10 @@
       fibra:    { min: 0.25, max: 0.35 },  // dB por km (drop)
       spl12: 3.5                           // divisor óptico 1:2
     };
-    // Faixa na ONT/ONU (dBm), fixa: verde de -8 a -25 · atenção de -25 a -27 · fora abaixo de -27 ou acima de -8
-    const GPON_LIMITS = { okMin: -25, min: -27, max: -8 };
+    // Faixas fixas (dBm), sem faixa de atenção: dentro = verde, fora = vermelho
+    // ONT/ONU RX: -8 a -27 · NAP/DIO (potência na porta da CTO) RX: 0 a -25
+    const GPON_LIMITS = { min: -27, max: -8 };
+    const NAP_LIMITS = { min: -25, max: 0 };
     // Fibras: Drop Low Friction (cinza), Cabo Micro Low (branco, com contorno), Fibra Invisível (transparente, autocolante)
     // 'Drop' continua sendo a chave interna do Drop Low Friction (projetos antigos abrem iguais)
     const GPON_CABLES = {
@@ -644,8 +755,8 @@
     function gponMetrics(n) {
       const lv = n.lv, L = GPON_LIMITS;
       return [
-        { key: 'min', short: 'MÍN', label: 'MÍN (perda mínima)', val: lv ? lv.min : null, min: L.min, max: L.max, warnBelow: L.okMin, unit: 'dBm' },
-        { key: 'max', short: 'MÁX', label: 'MÁX (perda máxima)', val: lv ? lv.max : null, min: L.min, max: L.max, warnBelow: L.okMin, unit: 'dBm' }
+        { key: 'min', short: 'MÍN', label: 'MÍN (perda mínima)', val: lv ? lv.min : null, min: L.min, max: L.max, unit: 'dBm' },
+        { key: 'max', short: 'MÁX', label: 'MÁX (perda máxima)', val: lv ? lv.max : null, min: L.min, max: L.max, unit: 'dBm' }
       ];
     }
     function diagnoseGpon(n) {
@@ -662,13 +773,12 @@
       metrics.forEach(m => { m.st = evalMetric(m.val, m.min, m.max, m.warnBelow); if (ST_RANK[m.st] > ST_RANK[status]) status = m.st; });
       const notes = [], best = n.lv.min, worst = n.lv.max;
       if (worst < L.min) notes.push(`MÁX (perda máxima) em ${fmt(worst)} dBm: ${fmtDb(L.min - worst)} dB abaixo do limite (${L.min} dBm).`);
-      else if (worst < L.okMin) notes.push(`MÁX (perda máxima) em ${fmt(worst)} dBm: na faixa de atenção (${L.okMin} a ${L.min} dBm).`);
       if (best < L.min) notes.push(`Até com a perda mínima o sinal fica em ${fmt(best)} dBm, abaixo de ${L.min} dBm.`);
       if (best > L.max) notes.push(`MÍN (perda mínima) em ${fmt(best)} dBm: acima de ${L.max} dBm, risco de saturar a ONT.`);
       let summary = '';
-      if (worst < L.okMin) {
-        const need = L.okMin - worst;
-        summary = `Para ficar no verde no pior caso é preciso tirar ${fmtDb(need)} dB do caminho: use menos conectores (cada um soma 0,5 a 0,8 dB), encurte o drop, evite divisor a mais ou confira a potência na porta da CTO.`;
+      if (worst < L.min) {
+        const need = L.min - worst;
+        summary = `Para ficar dentro da faixa (${L.max} a ${L.min} dBm) no pior caso é preciso tirar ${fmtDb(need)} dB do caminho: use menos conectores (cada um soma 0,5 a 0,8 dB), encurte o drop, evite divisor a mais ou confira a potência na porta da CTO.`;
       } else if (best > L.max) {
         summary = `Sinal forte demais: acrescente pelo menos ${fmtDb(best - L.max)} dB de atenuação (atenuador óptico) antes da ONT.`;
       }
@@ -688,7 +798,7 @@
             <span class="shrink-0 text-[11px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-bold">${tapVias(n)} PORTAS</span>
           </div>
           <div class="text-[12px] text-slate-400">CTO = NAP · ${esc(n.tec || 'GPON')}</div>
-          <div class="font-mono text-[15px] mt-1 text-slate-400">Potência: <span class="text-emerald-300 font-bold">${pot == null ? '--' : fmt2(pot)}</span> <span class="text-[12px]">dBm</span></div>
+          <div class="font-mono text-[15px] mt-1 text-slate-400">Potência: <span class="${originAlert(n) ? 'text-rose-400' : 'text-emerald-300'} font-bold">${pot == null ? '--' : fmt2(pot)}</span> <span class="text-[12px]">dBm</span></div>
           <div class="mt-1.5 text-[12px] text-slate-500">Portas em uso: <b class="text-slate-300">${used}/${tapVias(n)}</b></div>
         </div>`;
     }
@@ -761,7 +871,8 @@
               </select>
             </div>
           </div>
-          <p class="text-[10px] text-slate-500 leading-snug">Meça a potência na porta da CTO (NAP) e digite aqui. O simulador desconta conectores, fibra, divisor e cordão até a ONT.</p>
+          <p class="text-[10px] text-slate-500 leading-snug">Meça a potência na porta da CTO (NAP/DIO: esperado de ${NAP_LIMITS.max} a ${NAP_LIMITS.min} dBm) e digite aqui. O simulador desconta conectores, fibra, divisor e cordão até a ONT.</p>
+          ${originAlert(n) ? `<div class="text-[11px] leading-snug text-amber-200 bg-amber-950/70 border border-amber-600/70 rounded-lg px-2 py-1.5"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> <b>Alerta:</b> ${esc(originAlert(n).text)}</div>` : ''}
         </div>
         <div class="border-t border-slate-800 pt-2 space-y-1.5">
           <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Portas da CTO</label>
@@ -811,7 +922,7 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <h3 class="font-bold text-sm text-slate-100">Editar Fibra</h3>
-            <button onclick="deleteSelectedConnection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir ligação"><i class="fa-solid fa-trash-can"></i></button>
+            <div class="flex items-center gap-1"><button onclick="deleteSelectedConnection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir ligação"><i class="fa-solid fa-trash-can"></i></button><button onclick="closePanel()" class="panel-close ml-1" title="Fechar o painel (P)"><i class="fa-solid fa-xmark"></i></button></div>
           </div>
           <p class="text-[11px] text-slate-300"><b>${esc(src.name)}</b> <i class="fa-solid fa-arrow-right text-slate-500 mx-1"></i> <b>${esc(dst.name)}</b></p>
           <div>
@@ -849,20 +960,20 @@
           </div>
         </div>`;
     }
+    let limitsOpen = false;   // níveis padrão começam recolhidos
     function gponLimitsHTML() {
       const L = GPON_LIMITS;
       const box = (v, label, cls) => `<div class="bg-slate-950 border border-slate-800 rounded-lg px-1.5 py-1"><span class="text-slate-400 text-[10px] block">${label}</span><b class="text-xs font-mono ${cls}">${v}</b></div>`;
       return `
-          <div class="border-t border-slate-800 pt-2 space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Sinal na ONT (dBm)</label>
-              <span class="text-[10px] text-slate-500"><i class="fa-solid fa-lock"></i> fixos</span>
-            </div>
+          <details class="niveis border-t border-slate-800 pt-1" ${limitsOpen ? 'open' : ''} ontoggle="limitsOpen = this.open">
+            <summary class="text-emerald-400"><span><i class="fa-solid fa-chevron-right chev"></i>Faixas de sinal (dBm)</span><span class="text-slate-500 normal-case font-medium"><i class="fa-solid fa-lock"></i> fixos</span></summary>
+            <div class="space-y-2 pt-1">
             <div class="grid grid-cols-3 gap-1.5">
-              ${box(`${L.max} a ${L.okMin}`, 'OK', 'text-emerald-400')}${box(`${L.okMin} a ${L.min}`, 'Atenção', 'text-amber-400')}${box(`< ${L.min}`, 'Fora', 'text-rose-400')}
+              ${box(`${L.max} a ${L.min}`, 'ONT/ONU OK', 'text-emerald-400')}${box(`< ${L.min}`, 'ONT/ONU fora', 'text-rose-400')}${box(`${NAP_LIMITS.max} a ${NAP_LIMITS.min}`, 'NAP/DIO', 'text-sky-300')}
             </div>
             <p class="text-[10px] text-slate-500 leading-snug">MÍN = perda mínima do caminho · MÁX = perda máxima. Acima de ${L.max} dBm também fica fora (satura a ONT). Perdas: conector ${String(GPON.conector.min).replace('.', ',')}–${String(GPON.conector.max).replace('.', ',')} dB · cordão ${String(GPON.cordao.min).replace('.', ',')}–${String(GPON.cordao.max).replace('.', ',')} dB · divisor 1:2 ${String(GPON.spl12).replace('.', ',')} dB · fibra ${String(GPON.fibra.min).replace('.', ',')}–${String(GPON.fibra.max).replace('.', ',')} dB/km.</p>
-          </div>`;
+            </div>
+          </details>`;
     }
 
     // --- Edições do modo GPON ---
@@ -937,30 +1048,14 @@
       setModeQuiet('gpon');
       nodes = [
         { id: 'cto', type: 'tap', model: 'cto', tec: 'GPON', name: ctoName(8), vias: 8, x: 24, y: 90, signals: { pot: -20 } },
-        { id: 'spl', type: 'spl12', name: 'Divisor 1:2', x: 320, y: 120, signals: {} },
-        { id: 'ont', type: 'ont', name: 'ONT 1', x: 560, y: 90, signals: {} }
+        { id: 'pto', type: 'pto', name: 'PTO', x: 330, y: 250, signals: {} },
+        { id: 'ont', type: 'ont', name: 'ONT 1', x: 520, y: 420, signals: {} }
       ];
       connections = [
-        { id: 'g1', from: 'cto', fromPort: 'out1', to: 'spl', cableType: 'Drop', length: 50, conectores: 2 },
-        { id: 'g2', from: 'spl', fromPort: 'out1', to: 'ont', cableType: 'Cordão óptico', length: 2 }
+        { id: 'g1', from: 'cto', fromPort: 'out1', to: 'pto', cableType: 'Drop', length: 50, conectores: 2 },
+        { id: 'g2', from: 'pto', fromPort: 'out', to: 'ont', cableType: 'Cordão óptico', length: 2 }
       ];
-      openScenarioView();
-    }
-    function loadScenarioGpon2() {
-      setActiveScenario(null);
-      setModeQuiet('gpon');
-      nodes = [
-        { id: 'cto', type: 'tap', model: 'cto', tec: 'XGS-PON', name: ctoName(16), vias: 16, x: 24, y: 90, signals: { pot: -18.5 } },
-        { id: 'spl', type: 'spl12', name: 'Divisor 1:2', x: 320, y: 120, signals: {} },
-        { id: 'ont1', type: 'ont', name: 'ONT 1', x: 560, y: 40, signals: {} },
-        { id: 'ont2', type: 'ont', name: 'ONT 2', x: 560, y: 220, signals: {} }
-      ];
-      connections = [
-        { id: 'g1', from: 'cto', fromPort: 'out1', to: 'spl', cableType: 'Drop', length: 150, conectores: 2 },
-        { id: 'g2', from: 'spl', fromPort: 'out1', to: 'ont1', cableType: 'Cordão óptico', length: 2 },
-        { id: 'g3', from: 'spl', fromPort: 'out2', to: 'ont2', cableType: 'Micro Low', length: 25, conectores: 2 }
-      ];
-      openScenarioView();
+      openScenarioView(true);   // posições escolhidas para as etiquetas não ficarem atrás da CTO
     }
 
     // --- Relatório do modo GPON ---
@@ -1037,7 +1132,7 @@
                 <tbody>${rows || '<tr><td colspan="4" class="p-4 text-center text-xs text-slate-500">Nenhuma ONT conectada.</td></tr>'}</tbody>
               </table>
             </div>
-            <p class="text-[10px] text-slate-500 mt-2 font-mono">Sinal em dBm. MÍN = perda mínima · MÁX = perda máxima. OK de ${L.max} a ${L.okMin} · atenção de ${L.okMin} a ${L.min} · fora abaixo de ${L.min} ou acima de ${L.max}.</p>
+            <p class="text-[10px] text-slate-500 mt-2 font-mono">Sinal em dBm. MÍN = perda mínima · MÁX = perda máxima. ONT/ONU OK de ${L.max} a ${L.min} · fora abaixo de ${L.min} ou acima de ${L.max} · NAP/DIO de ${NAP_LIMITS.max} a ${NAP_LIMITS.min}.</p>
             ${pathRows ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">${pathRows}</div>` : ''}
           </div>
           <div>
@@ -1150,10 +1245,10 @@
         ] }
       ] },
       { id: 'equip', label: 'Equipamentos', icon: 'fa-hard-drive', groups: [
-        { label: 'Equipamento do cliente', items: [{ type: 'ont', name: 'ONT/ONU', tag: 'dBm', info: 'ONT = ONU: OK de −8 a −25 dBm, atenção de −25 a −27, fora abaixo de −27' }] }
+        { label: 'Equipamento do cliente', items: [{ type: 'ont', name: 'ONT/ONU', tag: 'dBm', info: 'ONT = ONU: RX OK de −8 a −27 dBm; fora disso fica vermelho' }] }
       ] },
       { id: 'origem', label: 'Origem', icon: 'fa-tower-cell', groups: [
-        { label: 'CTO = NAP', items: CTO_VIAS.map(v => ({ type: 'cto' + v, name: `CTO ${v} portas`, tag: 'dBm na porta', info: `${ctoName(v)}: origem do sinal óptico; informe a potência medida na porta (ex.: −20 dBm)` })) }
+        { label: 'CTO = NAP', items: CTO_VIAS.map(v => ({ type: 'cto' + v, name: `CTO ${v} portas`, tag: 'dBm na porta', info: `${ctoName(v)}: origem do sinal óptico; informe a potência medida na porta (NAP/DIO: 0 a −25 dBm)` })) }
       ] }
     ];
     const curPalette = () => isGpon() ? PALETTE_GPON : PALETTE;
@@ -1168,7 +1263,79 @@
       setTimeout(drawMinimap, 0);
     }
     function setHint(text) {
-      document.getElementById('dock-hint').textContent = text || DEFAULT_HINT;
+      let auto = DEFAULT_HINT;
+      const sel = swapTarget(), conn = selectedCable(), org = projectOrigin();
+      if (activeCategory === 'passivos' && sel) auto = `Passivo selecionado: ${sel.name}. Clique em outro passivo da lista para trocar (os cabos continuam ligados).`;
+      else if (activeCategory === 'cabos' && conn) auto = `${isGpon() ? 'Fibra selecionada' : 'Cabo selecionado'}: ${cableItemName(conn.cableType)}. Clique em outro tipo da lista para trocar (metragem e ligações continuam).`;
+      else if (activeCategory === 'origem' && org) auto = `Origem do projeto: ${org.name}. Clique em outra origem da lista para trocar (os cabos continuam ligados).`;
+      document.getElementById('dock-hint').textContent = text || auto;
+    }
+
+    // --- Troca de passivo pela lista do dock ---
+    // Passivos "de linha" que podem trocar entre si (TRAVA LOCK e isoladores ficam de fora: encaixam em cabo/saída)
+    const canSwap = t => !!NODE_DEFS[t] && !isLock(t) && !isIso(t);
+    function swapTarget() {
+      if (selection.size > 1 || !selectedNodeId) return null;
+      const n = byId(selectedNodeId);
+      return n && canSwap(n.type) ? n : null;
+    }
+    function swapSelectedPassive(type) {
+      const n = swapTarget();
+      if (!n) return false;
+      if (n.type === type) {
+        showToast('Esse já é o passivo selecionado. Para adicionar outro igual, arraste-o para o mapa.', 'info');
+        return true;
+      }
+      const before = NODE_DEFS[n.type].label;
+      if (!changeNodeType(n.id, type)) return true;   // changeNodeType já avisa (saídas insuficientes)
+      if (NODE_DEFS[type].fixed) n.rot = 0;
+      refresh();
+      showToast(`${before} trocado por ${NODE_DEFS[type].label}. Os cabos continuam ligados.`, 'success');
+      return true;
+    }
+    // Cabo/fibra selecionado
+    function selectedCable() {
+      return selection.size < 2 && !selectedNodeId && selectedConnectionId ? connById(selectedConnectionId) : null;
+    }
+    const cableItemName = t => { for (const c of curPalette()) for (const g of c.groups) for (const it of g.items) if (it.cable === t) return it.name; return t; };
+    function swapSelectedCable(type) {
+      const c = selectedCable();
+      if (!c) return false;
+      if (c.cableType === type) { showToast(`Esse já é o tipo ${isGpon() ? 'da fibra selecionada' : 'do cabo selecionado'}.`, 'info'); return true; }
+      const before = cableItemName(c.cableType);
+      updateCableType(type);   // valida RG11, regra do DG etc. e avisa se não puder
+      if (c.cableType === type) {
+        setCableTool(type);
+        showToast(`${before} trocado por ${cableItemName(type)}.`, 'success');
+      }
+      return true;
+    }
+    // Origem (só existe uma por projeto: TAP, DG ou CTO)
+    const projectOrigin = () => nodes.find(n => n.type === 'tap') || null;
+    const isOriginItem = t => /^(tap[248]|dg|cto\d+)$/.test(String(t));
+    const originKey = n => isCTO(n) ? 'cto' + tapVias(n) : isDG(n) ? 'dg' : 'tap' + tapVias(n);
+    function swapOrigin(type) {
+      const org = projectOrigin();
+      if (!org) return false;
+      if (originKey(org) === type) { showToast('Essa já é a origem do projeto.', 'info'); return true; }
+      selection.clear(); selectedConnectionId = null; selectedNodeId = org.id;
+      const before = org.name;
+      const m = /^(tap|cto)(\d+)$/.exec(type);
+      if (type === 'dg') updateOriginType('dg', 4);
+      else if (m && m[1] === 'cto') updateCtoVias(Number(m[2]));
+      else if (m) updateOriginType('tap', Number(m[2]));
+      if (originKey(org) === type) showToast(`${before} trocado por ${org.name}. Os cabos continuam ligados.`, 'success');
+      else render();
+      return true;
+    }
+    // Atualiza o dock só quando muda o item atual (passivo, cabo ou origem)
+    let dockSelKey = '';
+    function syncDockSelection() {
+      const n = swapTarget(), c = selectedCable(), o = projectOrigin();
+      const key = [n ? n.id + ':' + n.type : '', c ? c.id + ':' + c.cableType : '', o ? originKey(o) : ''].join('|');
+      if (key === dockSelKey) return;
+      dockSelKey = key;
+      renderDock();
     }
 
     function thumbHTML(item) {
@@ -1221,19 +1388,29 @@
         const row = document.createElement('div');
         row.className = 'flex-1 flex gap-1.5';
         g.items.forEach(item => {
-          const active = item.cable && item.cable === activeCableType;
+          const selNode = !item.cable && canSwap(item.type) ? swapTarget() : null;
+          const selConn = item.cable ? selectedCable() : null;
+          const org = !item.cable && isOriginItem(item.type) ? projectOrigin() : null;
+          const current = (!!selNode && selNode.type === item.type) || (!!selConn && selConn.cableType === item.cable) || (!!org && originKey(org) === item.type);
+          const active = (item.cable && item.cable === activeCableType && !selConn) || current;
           const b = document.createElement('button');
           b.className = `w-24 shrink-0 rounded-lg border px-1 py-1.5 flex flex-col items-center justify-between gap-1 transition ${active ? 'bg-sky-950/70 border-sky-500 ring-1 ring-sky-500' : 'bg-slate-800/70 border-slate-700 hover:bg-slate-700/80 hover:border-slate-500'}`;
           b.innerHTML = `
             <div class="flex-1 flex items-center justify-center">${thumbHTML(item)}</div>
             <span class="text-[10px] font-semibold text-slate-200 leading-tight text-center">${item.name}</span>
-            <span class="text-[9px] font-mono text-sky-300 bg-slate-950 px-1 rounded">${item.tag}</span>`;
+            <span class="text-[9px] font-mono text-sky-300 bg-slate-950 px-1 rounded">${current ? (org ? '✓ no projeto' : '✓ selecionado') : item.tag}</span>`;
+          if (current) b.dataset.current = '1';
+          if (selNode) b.title = current ? 'Este é o passivo selecionado no projeto' : `Trocar o ${selNode.name} por ${item.name}`;
+          if (selConn) b.title = current ? 'Este é o tipo do cabo selecionado' : `Trocar ${cableItemName(selConn.cableType)} por ${item.name}`;
+          if (org) b.title = current ? 'Esta é a origem do projeto' : `Trocar ${org.name} por ${item.name}`;
           b.onmouseenter = () => setHint(item.info);
           b.onmouseleave = () => setHint('');
           if (item.cable) {
-            b.onclick = () => setCableTool(item.cable);
+            b.onclick = () => { if (!swapSelectedCable(item.cable)) setCableTool(item.cable); };
           } else {
             b.onclick = () => {
+              if (canSwap(item.type) && swapSelectedPassive(item.type)) return;
+              if (isOriginItem(item.type) && swapOrigin(item.type)) return;
               addNode(item.type);
               if (isIso(item.type)) showToast(item.type === 'iso'
                 ? 'Arraste o CABLE ISOLATOR até um cabo RG6 Preto ou RG11 para ligar sozinho.'
@@ -1248,6 +1425,8 @@
         items.appendChild(box);
       });
       setHint('');
+      const cur = items.querySelector('[data-current]');
+      if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
 
     // "Decoder 1", "Decoder 2"... usa o menor número ainda livre
@@ -1355,6 +1534,11 @@
       let cableType = activeCableType;
       if (isGpon() && !isGponCable(cableType)) cableType = 'Drop';
       if (!isGpon() && isGponCable(cableType)) cableType = 'RG6';
+      const srcN = byId(linkSource.nodeId);
+      if (!isGpon() && srcN && srcN.type === 'tap' && !isDG(srcN) && cableType === 'RG6') {
+        cableType = 'RG6 Preto';
+        showToast('Do TAP Rede externa sai cabo drop: o cabo será RG6 Preto, com CABLE ISOLATOR automático.', 'info');
+      }
       if (isDG(byId(linkSource.nodeId)) && cableType !== DG_CABLE) {
         cableType = DG_CABLE;
         showToast('No DG só é permitido cabo RG6 Branco: o cabo será RG6 Branco.', 'warning');
@@ -1480,6 +1664,7 @@
       selectedConnectionId = conn.id;
       selectedNodeId = null;
       refresh();
+      if (isDropFromTap(conn) && autoIsoOnDrop(conn)) return;
       showToast(`Cabo ${conn.cableType} de ${length} m conectado.`, 'success');
     }
 
@@ -1516,6 +1701,13 @@
           ? { min: blank ? null : sigVal(s.pot), max: blank ? null : sigVal(s.pot) }
           : { ca: blank ? null : sigVal(s.ca), cb: blank ? null : sigVal(s.cb), rx: blank ? null : sigVal(s.rx), tx: blank ? null : sigVal(s.tx) };
         walkSignals(tap, new Set([tap.id]));
+      });
+      // HFC sem TAP/DG: a peça do topo (sem cabo de entrada) é o ponto de partida.
+      // O sinal dela é calculado a partir de qualquer ponto medido (Sinais no ponto).
+      if (!isGpon()) nodes.filter(n => n.type !== 'tap' && !n.lv && !inputConn(n.id)).forEach(root => {
+        const s = root.signals || {};
+        root.lv = { ca: sigVal(s.ca), cb: sigVal(s.cb), rx: sigVal(s.rx), tx: sigVal(s.tx) };
+        walkSignals(root, new Set([root.id]));
       });
     }
 
@@ -1659,7 +1851,7 @@
       }
       if (metrics.some(m => m.val == null)) {
         metrics.forEach(m => m.st = m.val == null ? 'none' : evalMetric(m.val, m.min, m.max, m.warnBelow));
-        return { status: 'none', metrics, notes: ['Sinais da origem (TAP ou DG) ainda não informados: preencha CA, CB, RX e TX no painel da origem.'], suggestions: [], summary: '' };
+        return { status: 'none', metrics, notes: ['Sinais ainda não informados: preencha a origem (TAP ou DG) ou digite o sinal medido em qualquer ponto, em "Sinais no ponto".'], suggestions: [], summary: '' };
       }
 
       let reduce = 0, reduceBand = null, add = 0, addBand = null, status = 'ok';
@@ -1912,7 +2104,17 @@
     }
 
     // --- RENDERERS ---
+    // Depois do CABLE ISOLATOR o cabo é sempre RG6 Branco (corrige projetos antigos)
+    function fixIsoOutputs() {
+      connections.forEach(c => {
+        const f = byId(c.from);
+        if (!f || f.type !== 'iso') return;
+        if (c.cableType !== 'RG6') c.cableType = 'RG6';
+        if (Number(c.length) !== ISO_TAIL_M) c.length = ISO_TAIL_M;
+      });
+    }
     function refresh() {
+      fixIsoOutputs();
       recalculateSignals();
       computeFixes();
       render();
@@ -1981,6 +2183,7 @@
       updateLinkBadge();
       updateDiagBadge();
       updateOrganizeHint();
+      syncDockSelection();
       scheduleCommit();
     }
 
@@ -2551,6 +2754,22 @@
       });
       return best && best.d <= maxDist ? best : null;
     }
+    // Cabo drop novo saindo do TAP: põe o CABLE ISOLATOR no meio dele, seguido de RG6 Branco curto
+    function autoIsoOnDrop(conn) {
+      const f = byId(conn.from), t = byId(conn.to);
+      if (!f || !t || isIso(t.type)) return false;
+      const iso = { id: uid('node'), type: 'iso', name: 'CABLE ISOLATOR', x: 0, y: 0, rot: 0, signals: {} };
+      nodes.push(iso);
+      const g = cableGeom(portPos(f, conn.fromPort), portPos(t, 'in'));
+      if (!autoInsertIsolator(iso.id, g.midX, g.midY, false) || !connections.some(c => c.to === iso.id && c.id === conn.id)) {
+        nodes = nodes.filter(n => n.id !== iso.id);
+        connections = connections.filter(c => c.from !== iso.id && c.to !== iso.id);
+        refresh();
+        return false;
+      }
+      showToast(`Cabo ${conn.cableType} de ${conn.length} m ligado com CABLE ISOLATOR e cabo RG6 Branco até o ${t.name}.`, 'success');
+      return true;
+    }
     // CABLE ISOLATOR: entra em cabo RG6 Preto ou RG11, logo após a etiqueta de metragem.
     // MINI ISOLATOR: entra em cabo RG6 Branco, entre o cabo e o EMTA / Decoder / Box TV.
     function autoInsertIsolator(id, wx, wy, fromDock) {
@@ -2597,7 +2816,7 @@
       n.y = Math.max(0, cy - sz.h / 2);
       const type = c.cableType;
       c.to = n.id;
-      connections.push({ id: uid('conn'), from: n.id, fromPort: 'out', to: dest.id, cableType: type === 'RG11' ? 'RG6 Preto' : type, length: 0 });   // depois do isolador não pode RG11
+      connections.push({ id: uid('conn'), from: n.id, fromPort: 'out', to: dest.id, cableType: 'RG6', length: ISO_TAIL_M });   // depois do CABLE ISOLATOR: cabo RG6 Branco curto
       selection.clear();
       selectedNodeId = n.id;
       selectedConnectionId = null;
@@ -2618,7 +2837,7 @@
         c1, c2
       };
     }
-    const cableLabel = c => isGponCable(c.cableType) ? gponCableLabel(c) : Number(c.length) > 0 ? `${c.length}m ${c.cableType}` : 'direto';
+    const cableLabel = c => isGponCable(c.cableType) ? gponCableLabel(c) : Number(c.length) > 0 ? `${c.length}m ${c.cableType}` : `direto · ${c.cableType === 'RG6' ? 'RG6 Branco' : c.cableType}`;
 
     // --- SELECTION & PROPERTIES ---
     function drawPendingCable(svg) {
@@ -2791,7 +3010,7 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <h3 class="font-bold text-sm text-slate-100">${list.length} componentes selecionados</h3>
-            <button onclick="deleteSelection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir selecionados (Delete)"><i class="fa-solid fa-trash-can"></i></button>
+            <div class="flex items-center gap-1"><button onclick="deleteSelection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir selecionados (Delete)"><i class="fa-solid fa-trash-can"></i></button><button onclick="closePanel()" class="panel-close ml-1" title="Fechar o painel (P)"><i class="fa-solid fa-xmark"></i></button></div>
           </div>
           <div class="grid grid-cols-3 gap-1.5">
             <button onclick="duplicateSelection()" class="py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold"><i class="fa-solid fa-clone"></i> Duplicar</button>
@@ -2814,6 +3033,7 @@
     }
 
     function updateDiagBadge() {
+      updatePanelHandle();
       const el = document.getElementById('diag-badge');
       if (!el) return;
       const anyFix = nodes.some(n => isEndpoint(n) && n._fix);
@@ -2928,7 +3148,7 @@
       let cur = n, guard = 0;
       while (cur && guard++ < 1000) {
         const c = inputConn(cur.id);
-        if (!c) return cur.type === 'tap' ? cur : null;
+        if (!c) return cur.type === 'tap' || !isGpon() ? cur : null;
         cur = byId(c.from);
       }
       return null;
@@ -2936,24 +3156,29 @@
     // Sinal medido/digitado no ponto: ajusta o nível da origem e recalcula toda a instalação
     function updatePointSignal(key, val) {
       const n = byId(selectedNodeId);
-      if (!n || !isEndpoint(n) || !n.lv) return;
+      if (!n || !n.lv || n.type === 'tap' || isGpon()) return;
       const v = parseFloat(String(val).replace(',', '.'));
       if (isNaN(v) && String(val).trim() === '') { renderProperties(); return; }
       if (isNaN(v)) { renderProperties(); return; }
       const org = originOf(n);
       if (!org) { showToast('Este ponto não está ligado a um TAP ou DG.', 'warning'); renderProperties(); return; }
+      org.signals = org.signals || {};
       const before = sigVal(org.signals[key]);
       const total = (n.path || []).reduce((t, st) => t + st.loss[key], 0);
       const newOrigin = key === 'tx' ? v - total : v + total;   // nível na origem = nível no ponto ± atenuação do caminho
       if (before != null && Math.abs(newOrigin - before) < 1e-9) return;
-      org.signals[key] = Math.round(newOrigin * 10) / 10;
+      org.signals[key] = Math.round(newOrigin * 100) / 100;   // 2 casas: o ponto medido fica exatamente com o valor digitado
       refresh();
       const K = key.toUpperCase();
-      showToast(`${K} no ${n.name} = ${fmt(v)} dBmV: ${K} do ${org.name} passou de ${fmt(before)} para ${fmt(org.signals[key])} e toda a instalação foi recalculada.`, 'info');
+      showToast(org === n
+        ? `${K} no ${n.name} = ${fmt(v)} dBmV: ponto de partida da rede; toda a instalação foi recalculada.`
+        : `${K} no ${n.name} = ${fmt(v)} dBmV: ${K} ${org.type === 'tap' ? 'do ' + org.name : 'na entrada do ' + org.name + ' (ponto de partida)'} ficou em ${fmt(org.signals[key])} e toda a instalação foi recalculada.`, 'info');
+      const lvl = originLevelAlert(org);
+      if (lvl) setTimeout(() => showToast(lvl.text, 'warning'), 3600);
       const al = key === 'tx' ? originAlert(org) : null;
       if (al) setTimeout(() => showToast(`Alerta: ${al.msg}`, 'warning'), 3600);
     }
-    function pointSignalsHTML(n) {
+    function pointSignalsHTML(n, title) {
       const org = originOf(n);
       if (!n.lv || !org) return `<div class="border-t border-slate-800 pt-2"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sinais no ponto</label><p class="text-[11px] text-slate-500">Ligue o ponto a um TAP ou DG para poder editar os sinais.</p></div>`;
       const cell = (k, cls) => `
@@ -2963,9 +3188,11 @@
         </label>`;
       return `
         <div class="border-t border-slate-800 pt-2 space-y-1.5">
-          <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">Sinais no ponto (editáveis)</label>
+          <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">${title || 'Sinais no ponto (editáveis)'}</label>
           <div class="grid grid-cols-4 gap-1.5">${cell('ca', 'text-slate-100')}${cell('cb', 'text-slate-100')}${cell('rx', 'text-sky-400')}${cell('tx', 'text-amber-400')}</div>
-          <p class="text-[10px] text-slate-500 leading-snug">Digite o valor medido aqui: o simulador ajusta o nível do ${esc(org.name)} e recalcula toda a instalação.</p>
+          <p class="text-[10px] text-slate-500 leading-snug">${org.type === 'tap'
+            ? `Digite o valor medido aqui: o simulador ajusta o nível do ${esc(org.name)} e recalcula toda a instalação.`
+            : `Sem TAP/DG: digite o sinal medido aqui (ou em qualquer outro ponto). Ele vira a base e todos os pontos são calculados a partir dele.`}</p>
         </div>`;
     }
 
@@ -3030,8 +3257,8 @@
           <p class="text-[10px] text-slate-500 mt-1">No mapa, arraste a alça azul acima da peça para girar com o mouse.</p>
         </div>
         <div class="border-t border-slate-800 pt-2">
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Nível na entrada (IN)</label>
-          ${lv ? `
+          ${!isGpon() && lv && originOf(n) ? pointSignalsHTML(n, 'Nível na entrada (IN) · editável') : `<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Nível na entrada (IN)</label>`}
+          ${!isGpon() && lv && originOf(n) ? '' : lv ? `
             <div class="grid grid-cols-4 gap-1 font-mono text-[10px] text-center">
               ${['ca', 'cb', 'rx', 'tx'].map(k => `<div class="bg-slate-950 border border-slate-800 rounded p-1"><span class="block text-slate-500">${k.toUpperCase()}</span><strong class="text-slate-200">${fmt(lv[k])}</strong></div>`).join('')}
             </div>` : `<p class="text-[11px] text-slate-500">Sem sinal: a entrada não está ligada a um TAP.</p>`}
@@ -3046,7 +3273,7 @@
     function diagnosticsPanelHTML() {
       const eps = nodes.filter(isEndpoint).map(n => ({ n, d: diagnose(n) }));
       const count = s => eps.filter(e => e.d.status === s).length;
-      const chips = ['ok', 'warn', 'bad', 'none'].map(s => `
+      const chips = (isGpon() ? ['ok', 'bad', 'none'] : ['ok', 'warn', 'bad', 'none']).map(s => `
         <div class="rounded-lg border px-1 py-1 text-center ${ST[s].chip}">
           <strong class="block text-sm font-mono leading-none">${count(s)}</strong>
           <span class="text-[8px] font-bold leading-tight block mt-0.5">${ST[s].label}</span>
@@ -3055,12 +3282,12 @@
       const order = { none: 0, bad: 1, warn: 2, ok: 3 };
       const list = eps.slice().sort((a, b) => order[a.d.status] - order[b.d.status]).map(({ n, d }) => `
         <li>
-          <button data-id="${esc(n.id)}" onclick="${d.suggestions.length ? 'goToFix' : 'selectNode'}(this.dataset.id)" class="w-full text-left bg-slate-950 hover:bg-slate-800/70 border ${ST[d.status].border} rounded-lg px-2 py-1.5 transition">
+          <button data-id="${esc(n.id)}" onclick="${d.suggestions.length ? 'goToFix' : 'selectNode'}(this.dataset.id)" class="w-full text-left bg-slate-950 hover:bg-slate-800/70 border ${ST[d.status].border} rounded-lg px-2 py-1 transition">
             <div class="flex items-center justify-between gap-2">
               <span class="text-[11px] font-bold text-slate-100 truncate">${equipIcon(n.type, { i: 'mr-1', img: 'inline-block w-6 h-5 object-contain mr-1 align-middle' })}${esc(n.name)}</span>
               ${statusBadge(d.status)}
             </div>
-            <div class="font-mono text-[10px] text-slate-400 mt-1">
+            <div class="font-mono text-[10px] text-slate-400 mt-0.5">
               ${d.metrics.map(m => `${m.short || m.key.toUpperCase()} <span class="${ST[m.st].text} font-bold">${fmt(m.val)}</span>`).join(' · ')}
             </div>
             ${d.status !== 'ok' && (d.summary || d.notes[0]) ? `<p class="text-[10px] text-slate-400 mt-1 leading-snug">${esc(d.notes[0] || d.summary)}</p>` : ''}
@@ -3077,11 +3304,14 @@
       return `
         <div class="space-y-3">
           <div class="border-b border-slate-800 pb-2">
-            <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2"><i class="fa-solid fa-stethoscope text-emerald-400"></i> Diagnóstico da Rede</h3>
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-sm text-slate-100 flex items-center gap-2"><i class="fa-solid fa-stethoscope text-emerald-400"></i> Diagnóstico da Rede</h3>
+              <button onclick="closePanel()" class="panel-close" title="Fechar o painel (Esc ou P)"><i class="fa-solid fa-xmark"></i></button>
+            </div>
             <p class="text-[10px] text-slate-400 mt-1">Clique em um ponto para ver o caminho do sinal e as correções. Selecione um componente ou cabo no mapa para editá-lo.</p>
           </div>
 
-          <div class="grid grid-cols-4 gap-1.5">${chips}</div>
+          <div class="grid ${isGpon() ? 'grid-cols-3' : 'grid-cols-4'} gap-1.5">${chips}</div>
           ${(() => { const fp = freePassivePorts(); return fp.length ? `<div class="text-[11px] leading-snug text-amber-200 bg-amber-950/70 border border-amber-600/70 rounded-lg px-2 py-1.5 space-y-1.5">
             <div><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> <b>Use TRAVA LOCK:</b> ${fp.length} saída${fp.length > 1 ? 's' : ''} de passivo sem cabo (${esc([...new Set(fp.map(f => f.node.name))].join(', '))}). Nenhum passivo pode ficar com saída livre.</div>
             <button onclick="lockAllFree()" class="w-full py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold"><i class="fa-solid fa-lock"></i> Colocar TRAVA LOCK ${fp.length > 1 ? 'nas ' + fp.length + ' saídas' : 'na saída'}</button>
@@ -3090,18 +3320,17 @@
 
           ${eps.length ? `<ul class="space-y-1.5">${list}</ul>` : `<p class="text-xs text-slate-500 text-center py-4">Nenhum equipamento de cliente no projeto.</p>`}
 
-          ${isGpon() ? gponLimitsHTML() : `<div class="border-t border-slate-800 pt-2 space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">Níveis padrão (dBmV)</label>
-              <span class="text-[10px] text-slate-500"><i class="fa-solid fa-lock"></i> fixos</span>
-            </div>
+          ${isGpon() ? gponLimitsHTML() : `<details class="niveis border-t border-slate-800 pt-1" ${limitsOpen ? 'open' : ''} ontoggle="limitsOpen = this.open">
+            <summary class="text-sky-400"><span><i class="fa-solid fa-chevron-right chev"></i>Níveis padrão (dBmV)</span><span class="text-slate-500 normal-case font-medium"><i class="fa-solid fa-lock"></i> fixos</span></summary>
+            <div class="space-y-2 pt-1">
             <div class="grid grid-cols-3 gap-1.5">
               ${lim('txMin', 'TX mín')}${lim('txMax', 'TX máx')}
               ${lim('rxMin', 'RX mín')}${lim('rxMax', 'RX máx')}
               ${lim('caMin', 'CA mín')}${lim('cbMin', 'CB mín')}
             </div>
             <p class="text-[10px] text-slate-500 leading-snug">Padrão fixo para todos os equipamentos (não pode ser alterado). Dentro do padrão = verde; fora = vermelho.</p>
-          </div>`}
+            </div>
+          </details>`}
         </div>
       `;
     }
@@ -3124,6 +3353,7 @@
                 <button onclick="deleteSelectedNode()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir componente (Delete)">
                   <i class="fa-solid fa-trash-can"></i>
                 </button>
+                <button onclick="closePanel()" class="panel-close ml-1" title="Fechar o painel (P)"><i class="fa-solid fa-xmark"></i></button>
               </div>
             </div>
 
@@ -3184,9 +3414,12 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
               <h3 class="font-bold text-sm text-slate-100">Editar Cabo</h3>
-              <button onclick="deleteSelectedConnection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir cabo">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
+              <div class="flex items-center gap-1">
+                <button onclick="deleteSelectedConnection()" class="text-rose-400 hover:text-rose-300 p-1" title="Excluir cabo">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+                <button onclick="closePanel()" class="panel-close ml-1" title="Fechar o painel (P)"><i class="fa-solid fa-xmark"></i></button>
+              </div>
             </div>
 
             <p class="text-[11px] text-slate-300"><b>${esc(src.name)}</b> <i class="fa-solid fa-arrow-right text-slate-500 mx-1"></i> <b>${esc(dst.name)}</b></p>
@@ -3327,6 +3560,11 @@
 
     function updateCableType(val) {
       const c = connById(selectedConnectionId);
+      if (c && val !== 'RG6' && byId(c.from) && byId(c.from).type === 'iso') {
+        showToast('Depois do CABLE ISOLATOR o cabo é sempre RG6 Branco.', 'warning');
+        renderProperties();
+        return;
+      }
       if (c && isGponCable(c.cableType) !== isGponCable(val)) { renderProperties(); return; }
       if (c && val === 'RG11' && rg11Problem(byId(c.from), c.length)) {
         showToast(rg11Problem(byId(c.from), c.length), 'warning');
@@ -3621,6 +3859,7 @@
         }
         if (e.key === 'Escape') {
           if (linkSource) cancelLink(true);
+          else if (!selectedNodeId && !selectedConnectionId && selection.size < 2) closePanel();
           else showDiagnostics();
         } else if (k === 'r') {
           rotateSelected(e.shiftKey ? -90 : 90);
@@ -3738,7 +3977,7 @@
       try {
         localStorage.setItem(autosaveKey, JSON.stringify({ savedAt: Date.now(), state: st }));
         const el = document.getElementById('autosave-status');
-        if (el) el.textContent = '· salvo automaticamente às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        if (el) el.textContent = 'Salvo às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       } catch (err) { /* navegador sem armazenamento: segue sem salvar */ }
     }
     function loadAutosave() {
@@ -3940,6 +4179,51 @@
     function saveUserScenarios() {
       try { localStorage.setItem(scenariosKey, JSON.stringify(userScenarios)); } catch (err) { /* ignora */ }
     }
+    // --- Novo projeto (botão no topo) ---
+    function openNewProject() {
+      closeMenus();
+      const g = isGpon();
+      const opt = (fn, icon, color, title, sub, main) => `
+        <button onclick="${fn}" class="np-opt ${main ? 'np-main' : ''}">
+          <i class="fa-solid ${icon} ${color}"></i>
+          <div><b>${title}</b><span>${sub}</span></div>
+        </button>`;
+      const hfc = opt("newBlankProject('hfc')", 'fa-tv', 'text-sky-400', 'Em branco · HFC', 'Mapa vazio no modo coaxial: comece pela origem (TAP ou DG)', !g);
+      const gpon = opt("newBlankProject('gpon')", 'fa-lightbulb', 'text-emerald-400', 'Em branco · GPON / XGS-PON', 'Mapa vazio no modo fibra: comece pela CTO', g);
+      document.getElementById('np-options').innerHTML = (g ? gpon + hfc : hfc + gpon)
+        + opt('newFromExample()', 'fa-lightbulb', 'text-amber-400', 'Começar pelo exemplo', `Abre o ${g ? 'Cenário 1 GPON' : 'Cenário 1'} pronto para editar`)
+        + opt('closeNewProject(); triggerJSONImport()', 'fa-folder-open', 'text-slate-400', 'Abrir arquivo (.json)', 'Projeto salvo antes com Salvar → Só o projeto');
+      document.getElementById('new-project').classList.remove('hidden');
+      const first = document.querySelector('#np-options .np-opt');
+      if (first) first.focus();
+    }
+    function closeNewProject() {
+      document.getElementById('new-project').classList.add('hidden');
+    }
+    // Troca o modo guardando o projeto do modo atual, sem abrir o projeto salvo do outro modo
+    function switchModeForNew(m) {
+      if (m === projectMode) return;
+      flushCommit();
+      try { localStorage.setItem(autosaveKey + '.modo.' + projectMode, stateJSON()); } catch (err) { /* ignora */ }
+      setModeQuiet(m);
+    }
+    // Em branco: cria um cenário novo (fica salvo em Cenários) e abre o dock na Origem
+    function newBlankProject(m) {
+      closeNewProject();
+      switchModeForNew(m);
+      addScenario();
+    }
+    function newFromExample() {
+      closeNewProject();
+      if (isGpon()) loadScenarioGpon1(); else loadScenario1();
+      showToast('Exemplo aberto. Ctrl+Z volta ao projeto anterior.', 'info');
+    }
+    // Esc fecha a janela antes de qualquer outro atalho
+    document.addEventListener('keydown', (e) => {
+      const np = document.getElementById('new-project');
+      if (e.key === 'Escape' && np && !np.classList.contains('hidden')) { e.preventDefault(); e.stopImmediatePropagation(); closeNewProject(); }
+    }, true);
+
     // Cenário+: guarda o projeto atual já organizado (o mapa atual não muda)
     // Cenário+: cria um cenário novo em branco e abre para montar; tudo o que for feito fica salvo nele
     function addScenario() {
@@ -3982,7 +4266,7 @@
     }
     function nextScenarioName() {
       const used = new Set(userScenarios.map(x => x.name));
-      let i = 3 + userScenarios.length;
+      let i = 2 + userScenarios.length;
       while (used.has('Cenário ' + i)) i++;
       return 'Cenário ' + i;
     }
@@ -4032,7 +4316,7 @@
       const mine = userScenarios.map((sc, i) => `
         <div class="flex items-center gap-1 rounded-lg hover:bg-slate-800">
           <button data-id="${esc(sc.id)}" onclick="openUserScenario(this.dataset.id)" class="flex-1 min-w-0 text-left px-2 py-1.5 flex items-center gap-2.5">
-            ${num(i + 3)}
+            ${num(i + 2)}
             <span class="min-w-0"><b class="block text-xs text-slate-100 truncate">${esc(sc.name)}<span class="ml-1 text-[9px] font-bold uppercase rounded px-1 border ${sc.state && sc.state.mode === 'gpon' ? 'text-emerald-300 bg-emerald-950 border-emerald-700/60' : 'text-sky-300 bg-sky-950 border-sky-700/60'}">${sc.state && sc.state.mode === 'gpon' ? 'GPON' : 'HFC'}</span>${sc.id === activeScenarioId ? ' <span class="ml-1 text-[9px] font-bold uppercase text-violet-300 bg-violet-950 border border-violet-700/60 rounded px-1">aberto</span>' : ''}</b><span class="block text-[10px] text-slate-400 truncate">${sc.state.nodes.length ? sc.state.nodes.length + ' componentes' : 'em branco'} · salvo em ${new Date(sc.savedAt).toLocaleDateString('pt-BR')}</span></span>
           </button>
           <button data-id="${esc(sc.id)}" onclick="renameScenario(this.dataset.id)" title="Renomear" class="shrink-0 w-8 h-8 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-700"><i class="fa-solid fa-pen text-[11px]"></i></button>
@@ -4045,15 +4329,13 @@
         </button>
         ${nodes.length ? `<button onclick="saveMapAsScenario()" class="w-full text-left mt-1 px-3 py-1.5 rounded-lg hover:bg-slate-800 text-[11px] text-slate-300 flex items-center gap-2"><i class="fa-solid fa-floppy-disk text-slate-400"></i> ou salvar o mapa atual como cenário</button>` : ''}
         <div class="mt-1 pt-1 border-t border-slate-800 space-y-0.5">
-          ${isGpon() ? example(1, 'Cenário 1 GPON', 'CTO −20 dBm · drop 2 conectores · 1:2 · cordão · ONT', 'loadScenarioGpon1')
-            + example(2, 'Cenário 2 XGS-PON', 'CTO 16 · drop LF 150 m · 1:2 · micro low · 2 ONTs', 'loadScenarioGpon2')
-            : example(1, 'Cenário 1', 'DG · DC 9 · divisor 1/2 · mini isolators', 'loadScenario1')
-            + example(2, 'Cenário 2', 'TAP 4 vias · cable isolator · DC 9 · 1/3D', 'loadScenario2')}
+          ${isGpon() ? example(1, 'Cenário 1 GPON', 'CTO −20 dBm · drop 2 conectores · PTO · cordão · ONT', 'loadScenarioGpon1')
+            : example(1, 'Cenário 1', 'DG · DC 9 · divisor 1/2 · mini isolators', 'loadScenario1')}
           ${mine}
         </div>`;
     }
     // Abre um cenário: organizado, zoom ajustado à tela e painéis fechados
-    function openScenarioView() {
+    function openScenarioView(keepLayout) {   // keepLayout: usa as posições do exemplo, sem organizar
       closeLengthPopup();
       selection.clear();
       selectedNodeId = null;
@@ -4064,8 +4346,7 @@
       savePrefs();
       renderDock();
       refresh();          // mede os cards
-      layoutCore();
-      refresh();
+      if (!keepLayout) { layoutCore(); refresh(); }
       zoomFit();
     }
     function loadPrefs() {
@@ -4137,6 +4418,27 @@
       document.getElementById('properties-panel').classList.toggle('hidden');
       setTimeout(drawMinimap, 0);
     }
+    function closePanel() {
+      document.getElementById('properties-panel').classList.add('hidden');
+      setTimeout(drawMinimap, 0);
+    }
+    // Puxador: seta para fechar com o painel aberto; "‹ Diagnóstico" com a cor do status quando fechado
+    function updatePanelHandle() {
+      const h = document.getElementById('panel-handle'), pnl = document.getElementById('properties-panel');
+      if (!h || !pnl) return;
+      const fechado = pnl.classList.contains('hidden');
+      h.classList.toggle('fechado', fechado);
+      if (fechado) { h.style.right = '0'; h.style.top = '50%'; h.style.transform = 'translateY(-50%)'; }
+      else { h.style.right = (pnl.offsetWidth + 12) + 'px'; h.style.top = '1.5rem'; h.style.transform = 'none'; }
+      h.title = fechado ? 'Abrir o painel de diagnóstico (P)' : 'Fechar o painel (P)';
+      const ico = h.querySelector('.ph-ico');
+      ico.className = 'fa-solid ph-ico ' + (fechado ? 'fa-chevron-left' : 'fa-chevron-right');
+      const sts = nodes.filter(isEndpoint).map(n => statusOf(n));
+      const dot = h.querySelector('.ph-dot');
+      dot.className = 'ph-dot ' + (sts.some(x => x === 'bad' || x === 'none') ? 'bad'
+        : (sts.some(x => x === 'warn') || originAlerts().length || freePassivePorts().length) ? 'warn' : '');
+    }
+    new MutationObserver(updatePanelHandle).observe(document.getElementById('properties-panel'), { attributes: true, attributeFilter: ['class'] });
 
     // Organiza a rede em árvore, da esquerda (TAP) para a direita (equipamentos)
     const LAYOUT_ROT = { spl12: 270, div12: 270, div13: 270, div13d: 270, div18: 270, div14: 90 };
@@ -4347,7 +4649,9 @@
       ].map(o => {
         const zc = document.getElementById('zoom-controls');
         const bottom = Math.max(pad, zc ? zc.offsetHeight + 16 : pad);   // não fica embaixo da barra de zoom
-        const aw = c.clientWidth - o.left - pad, ah = c.clientHeight - o.top - bottom;
+        const pnl = document.getElementById('properties-panel');
+        const right = pnl && !pnl.classList.contains('hidden') ? Math.max(pad, pnl.offsetWidth + 24) : pad;   // não fica embaixo do painel
+        const aw = c.clientWidth - o.left - right, ah = c.clientHeight - o.top - bottom;
         return { ...o, aw, ah, z: Math.min(maxZoom, aw / bw, ah / bh) };
       });
       const o = opts[0].z >= opts[1].z ? opts[0] : opts[1];
@@ -4402,31 +4706,6 @@
       openScenarioView();
     }
 
-    function loadScenario2() {
-      setActiveScenario(null);
-      setModeQuiet('hfc');
-      nodes = [
-        { id: 'tap', type: 'tap', name: tapName(4), vias: 4, x: 24, y: 90, signals: { ca: 18.0, cb: 15.0, rx: 13.0, tx: 39.0 } },
-        { id: 'dc9', type: 'dc9', name: 'DC 9 dB', x: 290, y: 200, signals: {} },
-        { id: 'div13d', type: 'div13d', name: 'Divisor 1/3D', x: 460, y: 70, signals: {} },
-        { id: 'tv1', type: 'tv', name: 'Decoder 1', x: 720, y: 192, signals: {} },
-        { id: 'tv2', type: 'tv', name: 'Decoder 2', x: 720, y: 348, signals: {} },
-        { id: 'modem', type: 'modem', name: 'EMTA F@st3896', x: 710, y: 504, signals: {} },
-        { id: 'tv3', type: 'tv', name: 'Decoder 3', x: 330, y: 480, signals: {} }
-      ];
-
-      connections = [
-        { id: 'c1', from: 'tap',    fromPort: 'out1', to: 'dc9',    cableType: 'RG6 Preto', length: 40 },
-        { id: 'c2', from: 'dc9',    fromPort: 'out',  to: 'div13d', cableType: 'RG6', length: 10 },
-        { id: 'c3', from: 'dc9',    fromPort: 'tap',  to: 'tv3',    cableType: 'RG6', length: 10 },
-        { id: 'c4', from: 'div13d', fromPort: 'out1', to: 'tv1',    cableType: 'RG6', length: 5 },
-        { id: 'c5', from: 'div13d', fromPort: 'out2', to: 'tv2',    cableType: 'RG6', length: 6 },
-        { id: 'c6', from: 'div13d', fromPort: 'out3', to: 'modem',  cableType: 'RG6', length: 15 }
-      ];
-      addScenarioIsolators(['c1']);   // CABLE ISOLATOR no cabo de entrada RG6 Preto + MINI ISOLATOR em cada aparelho
-      openScenarioView();
-    }
-
     // Coloca os isoladores nos cenários de exemplo: CABLE ISOLATOR nos cabos indicados (RG6 Preto / RG11)
     // e MINI ISOLATOR em todo cabo RG6 Branco que chega num EMTA, Decoder ou Box TV
     function addScenarioIsolators(cableIds) {
@@ -4435,7 +4714,7 @@
         if (!c) return;
         const iso = { id: 'iso' + (i + 1), type: 'iso', name: 'CABLE ISOLATOR', x: 0, y: 0, rot: 0, signals: {} };
         nodes.push(iso);
-        connections.push({ id: 'ci' + (i + 1), from: iso.id, fromPort: 'out', to: c.to, cableType: c.cableType === 'RG11' ? 'RG6 Preto' : c.cableType, length: 0 });
+        connections.push({ id: 'ci' + (i + 1), from: iso.id, fromPort: 'out', to: c.to, cableType: 'RG6', length: ISO_TAIL_M });
         c.to = iso.id;
       });
       connections.filter(c => c.cableType === 'RG6' && EQUIP[(nodes.find(n => n.id === c.to) || {}).type]).forEach((c, i) => {
@@ -4647,7 +4926,7 @@
           <text x="${n.x + 12}" y="${n.y + 22}" font-size="13" font-weight="800" fill="#0f172a">${esc(n.name)}</text>
           <text x="${n.x + 12}" y="${n.y + 37}" font-size="9.5" fill="#475569">${tap ? `${isDG(n) ? 'DG · ' : isCTO(n) ? 'CTO/NAP · ' + esc(n.tec || 'GPON') + ' · ' : ''}Origem · ${tapVias(n)} ${isCTO(n) ? 'portas' : 'vias'} (${connections.filter(c => c.from === n.id).length} em uso)` : esc(EQUIP[n.type].label)}</text>
           ${isGpon() ? gponReportLines(n, d) : line('ca', 'cb', n.y + 58) + line('rx', 'tx', n.y + 76)}
-          ${tap ? (originAlert(n) ? `<text x="${n.x + sz.w - 10}" y="${n.y + sz.h - 10}" font-size="10" font-weight="800" fill="#d97706" text-anchor="end">ALERTA TX</text>` : '') : `<text x="${n.x + sz.w - 10}" y="${n.y + sz.h - 10}" font-size="10" font-weight="800" fill="${stroke}" text-anchor="end">${ST[d.status].report}</text>`}
+          ${tap ? (originAlert(n) ? `<text x="${n.x + sz.w - 10}" y="${n.y + sz.h - 10}" font-size="10" font-weight="800" fill="#d97706" text-anchor="end">${isCTO(n) ? 'ALERTA NAP' : 'ALERTA TX'}</text>` : '') : `<text x="${n.x + sz.w - 10}" y="${n.y + sz.h - 10}" font-size="10" font-weight="800" fill="${stroke}" text-anchor="end">${ST[d.status].report}</text>`}
         </g>`;
       });
       return `<svg viewBox="${x0} ${y0} ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto block" style="max-height:560px; font-family: Inter, sans-serif">
