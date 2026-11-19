@@ -234,7 +234,7 @@
   </svg>
 
   <!-- TOP BAR -->
-  <header class="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between z-30 shrink-0">
+  <header class="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center z-30 shrink-0" style="gap:1.75rem">
     <div class="flex items-center gap-3">
       <div>
         <h1 class="font-bold text-sm text-slate-100 leading-tight whitespace-nowrap">Simulador PRO HFC/G-PON/XGS-PON</h1>
@@ -247,6 +247,13 @@
       <div id="mode-switch" class="flex rounded-lg border border-slate-700 overflow-hidden text-[11px] font-bold mr-1" title="Tipo de projeto: HFC (coaxial) ou GPON / XGS-PON (fibra)">
         <button id="mode-hfc" onclick="setProjectMode('hfc')" class="px-2.5 py-1.5 bg-sky-600 text-white"><i class="fa-solid fa-tv mr-1"></i>HFC</button>
         <button id="mode-gpon" onclick="setProjectMode('gpon')" class="px-2.5 py-1.5 border-l border-slate-700 bg-slate-800 text-slate-300"><i class="fa-solid fa-lightbulb mr-1"></i>GPON / XGS-PON</button>
+      </div>
+      <div class="relative">
+        <button onclick="toggleMenu('scen-menu', event)" title="Cenários: abrir um cenário ou salvar o mapa atual (Cenário+)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-folder-open text-sky-400"></i>
+          <span>Cenários</span><i class="fa-solid fa-caret-down text-[10px]"></i>
+        </button>
+        <div id="scen-menu" class="hidden absolute left-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-1 z-50" onclick="event.stopPropagation()"></div>
       </div>
       <button onclick="openNewProject()" title="Novo projeto: em branco, pelo exemplo ou abrindo um arquivo" class="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 mr-1">
         <i class="fa-solid fa-file-circle-plus"></i>
@@ -261,13 +268,6 @@
         <span>Diagnóstico</span>
         <span id="diag-badge"></span>
       </button>
-      <div class="relative">
-        <button onclick="toggleMenu('scen-menu', event)" title="Cenários: abrir um cenário ou salvar o mapa atual (Cenário+)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-          <i class="fa-solid fa-folder-open text-sky-400"></i>
-          <span>Cenários</span><i class="fa-solid fa-caret-down text-[10px]"></i>
-        </button>
-        <div id="scen-menu" class="hidden absolute left-0 top-full mt-1 w-72 max-h-[70vh] overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-1 z-50" onclick="event.stopPropagation()"></div>
-      </div>
       <button onclick="generateProjectReport()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5">
         <i class="fa-solid fa-file-invoice"></i>
         <span>Relatório</span>
@@ -380,7 +380,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.34';   // Versão Prévia
+    const APP_VERSION = '0.35';   // Versão Prévia
     document.getElementById('sig-versao').textContent = 'Versão Prévia ' + APP_VERSION;
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
@@ -713,9 +713,9 @@
       if (!linkSource) return 'Nenhuma porta de origem selecionada.';
       if (target.id === linkSource.nodeId) return 'Não é possível ligar um componente nele mesmo.';
       const srcL = byId(linkSource.nodeId);
-      if (isGateway(srcL) && !isNetDev(target)) return `Das portas LAN e do Wi-Fi ${GW().da} só saem pontos de TV via IP (Box TV ou Sound Box).`;
-      if (isNetDev(target) && !isGateway(srcL)) return `Box TV via IP e Sound Box se ligam ${GW().na} (porta LAN ou Wi-Fi).`;
-      if (isGateway(srcL) && netCount(srcL.id) >= NET_MAX_TV) return `${GW().A} aceita até ${NET_MAX_TV} pontos de TV.`;
+      if (isGateway(srcL) && !isNetDev(target)) return `Das portas LAN e do Wi-Fi ${GW().da} só saem pontos de TV e dispositivos da rede (Box TV, Sound Box, Smart TV, Video-game, PC...).`;
+      if (isNetDev(target) && !isGateway(srcL)) return `${target.name} se liga ${GW().na} (porta LAN ou Wi-Fi).`;
+      if (isGateway(srcL) && isTvPoint(target) && netCount(srcL.id) >= NET_MAX_TV) return `${GW().A} aceita até ${NET_MAX_TV} pontos de TV.`;
       if (target.type === 'tap') return isCTO(target) ? 'A CTO é a origem do sinal e não possui entrada.' : 'O TAP é a origem do sinal e não possui entrada.';
       if (inputConn(target.id)) return `A entrada de "${target.name}" já está ocupada.`;
       if (isAncestor(target.id, linkSource.nodeId)) return 'Essa ligação criaria um laço na rede.';
@@ -745,19 +745,29 @@
       'Cordão óptico':   { name: 'Cordão óptico',     short: 'cordão',    color: '#facc15', light: '#a16207', width: 3 },
       // Rede (ONT → ponto de TV): não entram no balanço óptico
       'RJ45 1,5 m':      { name: 'Cabo RJ45 1,5 m',   short: 'RJ45 1,5 m', color: '#c084fc', light: '#7e22ce', width: 3, net: true },
-      'RJ45':            { name: 'Cabo RJ45 (metros)', short: 'RJ45',     color: '#3b82f6', light: '#1d4ed8', width: 3, net: true },
+      'RJ45':            { name: 'PONTO ULTRA (RJ45 em metros)', short: 'PONTO ULTRA', color: '#3b82f6', light: '#1d4ed8', width: 3, net: true },
       'Wi-Fi':           { name: 'Wi-Fi',             short: 'Wi-Fi',     color: '#34d399', light: '#047857', width: 2, dash: '3 7', net: true }
     };
     const isNetCable = t => !!(GPON_CABLES[t] && GPON_CABLES[t].net);
-    // Pontos de TV do GPON: ligados na ONT por cabo RJ45 (porta LAN) ou Wi-Fi
+    // Aparelhos ligados na ONT (GPON) ou no EMTA (HFC) por cabo de rede (porta LAN) ou Wi-Fi.
+    // tv = ponto de TV (limite de 3); dev = dispositivo da rede do cliente (limitado pelas 4 LAN no cabo)
     const NET_DEV = {
-      boxtv:    { label: 'Box TV',    name: 'Box TV',    sub: 'Wi-Fi ou RJ45 1,5 m' },
-      soundbox: { label: 'Sound Box', name: 'Sound Box', sub: 'RJ45 em metros (Wi-Fi não recomendado)' }
+      boxtv:     { label: 'Box TV',     name: 'Box TV',     kind: 'tv' },
+      tvapp:     { label: 'TV APP',     name: 'TV APP',     kind: 'tv' },   // Smart TV com o app: mesmas regras do Box TV
+      soundbox:  { label: 'Sound Box',  name: 'Sound Box',  kind: 'tv' },
+      smarttv:   { label: 'Smart TV',   name: 'Smart TV',   kind: 'dev', icon: 'fa-tv' },
+      videogame: { label: 'Video-game', name: 'Video-game', kind: 'dev', icon: 'fa-gamepad' },
+      pc:        { label: 'PC',         name: 'PC',         kind: 'dev', icon: 'fa-desktop' },
+      notebook:  { label: 'Notebook',   name: 'Notebook',   kind: 'dev', icon: 'fa-laptop' }
     };
     const isNetDev = n => !!n && !!NET_DEV[n.type];
+    const isTvPoint = n => isNetDev(n) && NET_DEV[n.type].kind === 'tv';
+    const usesPatch = n => !!n && (n.type === 'boxtv' || n.type === 'tvapp');   // Box TV e TV APP: RJ45 1,5 m, PONTO ULTRA acima de 1,5 m ou Wi-Fi
+    const WIFI_RSSI_MIN = -60;   // Wi-Fi: rede 5 GHz e RSSI até −60 dBm
     const ONT_LANS = 4, NET_MAX_TV = 3, RJ45_MAX = 100, PATCH_M = 1.5;
     const ONT_PORTS = [1, 2, 3, 4].map(i => ({ id: 'lan' + i, label: 'LAN ' + i, loss: 0 })).concat([{ id: 'wifi', label: 'Wi-Fi', loss: 0, multi: true }]);
-    const netCount = ontId => connections.filter(c => c.from === ontId && isNetDev(byId(c.to))).length;
+    const netCount = ontId => connections.filter(c => c.from === ontId && isTvPoint(byId(c.to))).length;
+    const devCount = ontId => connections.filter(c => c.from === ontId && isNetDev(byId(c.to)) && !isTvPoint(byId(c.to))).length;
     const GW = () => isGpon() ? { na: 'na ONT', da: 'da ONT', A: 'A ONT', por: 'por ONT' } : { na: 'no EMTA', da: 'do EMTA', A: 'O EMTA', por: 'por EMTA' };
     const isGateway = n => !!n && (n.type === 'ont' || n.type === 'modem');   // ONT no GPON, EMTA no HFC
     // Online quando ligado numa ONT com sinal OK
@@ -766,12 +776,25 @@
       if (!c || !isGateway(ont)) return { st: 'off', text: 'offline', why: `Ligue ${GW().na}: porta LAN (cabo) ou Wi-Fi.` };
       if (!['ok', 'warn'].includes(statusOf(ont))) return { st: 'off', text: 'offline', why: `${ont.name} sem sinal OK.` };
       const wifi = c.cableType === 'Wi-Fi';
-      if (wifi && n.type === 'soundbox') return { st: 'warn', text: 'online · Wi-Fi não recomendado', why: 'Prefira cabo RJ45 para a Sound Box.' };
-      return { st: 'on', text: 'online', why: wifi ? `via Wi-Fi da ${ont.name}` : `via ${gponCableLabel(c)} na ${(ONT_PORTS.find(x => x.id === c.fromPort) || {}).label || 'LAN'} da ${ont.name}` };
+      if (wifi && n.type === 'soundbox') return { st: 'warn', text: 'online · Wi-Fi não recomendado', why: 'Prefira cabo de rede (PONTO ULTRA) para a Sound Box. ' + wifiRule() };
+      if (wifi && c.band === '2.4') return { st: 'warn', text: 'online · Wi-Fi 2,4 GHz', why: 'Use a rede 5 GHz. ' + wifiRule() };
+      const rssi = sigVal(c.rssi);
+      if (wifi && rssi != null && rssi < WIFI_RSSI_MIN) return { st: 'warn', text: `online · RSSI ${fmtDb(rssi)} dBm`, why: `Sinal Wi-Fi fraco: o RSSI deve ser até ${WIFI_RSSI_MIN} dBm (de ${WIFI_RSSI_MIN} para 0). Aproxime o aparelho ou use cabo de rede.` };
+      return { st: 'on', text: 'online', why: wifi ? `via Wi-Fi ${ont.type === 'modem' ? 'do' : 'da'} ${ont.name}` : `via ${gponCableLabel(c)} na ${(ONT_PORTS.find(x => x.id === c.fromPort) || {}).label || 'LAN'} ${ont.type === 'modem' ? 'do' : 'da'} ${ont.name}` };
     }
     const NET_ST = { on: 'ok', warn: 'warn', off: 'bad' };
+    const wifiRule = () => `Wi-Fi: use a rede 5 GHz e RSSI até ${WIFI_RSSI_MIN} dBm.`;
     // Desenho dos aparelhos (sem marca)
     function netDevSVG(type, w) {
+      if (type === 'tvapp') return `<svg viewBox="0 0 64 44" width="${w}" class="block shrink-0" aria-hidden="true">
+        <rect x="3" y="2" width="58" height="34" rx="3" fill="#111827" stroke="#4b5563" stroke-width="2"/>
+        <rect x="7" y="6" width="50" height="26" rx="1.5" fill="#1f2937"/>
+        <circle cx="32" cy="19" r="8" fill="#dc2626"/>
+        <path d="M29.5 15 L36 19 L29.5 23 Z" fill="#fff"/>
+        <rect x="27" y="36" width="10" height="3" fill="#4b5563"/>
+        <rect x="21" y="39" width="22" height="3" rx="1.5" fill="#4b5563"/>
+      </svg>`;
+      if (NET_DEV[type] && NET_DEV[type].icon) return `<div class="shrink-0 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 text-sky-300" style="width:${w}px;height:${Math.round(w * 0.7)}px;font-size:${Math.round(w * 0.42)}px" aria-hidden="true"><i class="fa-solid ${NET_DEV[type].icon}"></i></div>`;
       if (type === 'soundbox') return `<svg viewBox="0 0 64 44" width="${w}" class="block shrink-0" aria-hidden="true">
         <rect x="3" y="3" width="58" height="38" rx="6" fill="#4b5563"/>
         <rect x="3" y="3" width="58" height="13" rx="6" fill="#1f2937"/>
@@ -799,6 +822,7 @@
             </div>
           </div>
           <div class="mt-2"><span class="net-chip net-${ns.st}">● ${ns.text}</span></div>
+          ${c && c.cableType === 'Wi-Fi' ? `<div class="mt-1.5 text-[11px] leading-snug text-amber-300"><i class="fa-solid fa-triangle-exclamation"></i> Use 5 GHz · RSSI até ${WIFI_RSSI_MIN} dBm${c.band === '2.4' ? ' · <b>agora 2,4 GHz</b>' : ''}${sigVal(c.rssi) != null ? ' · medido ' + fmtDb(sigVal(c.rssi)) : ''}</div>` : ''}
         </div>`;
     }
     // Desenho de um cabo óptico (mesmo visual no mapa, no dock e no relatório)
@@ -826,7 +850,7 @@
     function gponCableLabel(c) {
       if (c.cableType === 'Wi-Fi') return 'Wi-Fi';
       if (c.cableType === 'RJ45 1,5 m') return '1,5 m RJ45';
-      if (c.cableType === 'RJ45') return `${c.length}m RJ45`;
+      if (c.cableType === 'RJ45') return `${c.length}m PONTO ULTRA`;
       if (c.cableType === 'Cordão óptico') return Number(c.length) > 0 ? `${c.length}m cordão óptico` : 'cordão óptico';
       const k = Math.max(0, Math.round(Number(c.conectores) || 0));
       return `${c.length}m ${(GPON_CABLES[c.cableType] || GPON_CABLES.Drop).short} · ${k} con.`;
@@ -900,7 +924,7 @@
           </div>
           ${levelsGridHTML(d)}
           <div class="mt-2 flex justify-between items-center gap-1 text-[12px] [&>span]:text-[11px]"><span class="text-slate-500">dBm</span>${statusBadge(d.status)}</div>
-          <div class="mt-1.5 pb-2 text-[11px] text-slate-500"><i class="fa-solid fa-tv"></i> Pontos de TV: <b class="text-slate-300">${netCount(n.id)}/${NET_MAX_TV}</b></div>
+          <div class="mt-1.5 pb-2 text-[11px] text-slate-500"><i class="fa-solid fa-tv"></i> Pontos de TV: <b class="text-slate-300">${netCount(n.id)}/${NET_MAX_TV}</b>${devCount(n.id) ? ` · dispositivos: <b class="text-slate-300">${devCount(n.id)}</b>` : ''}</div>
         </div>`;
     }
     function renderPTOSVG(n) {
@@ -1199,15 +1223,15 @@
           <div class="report-map">
             <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">1. Topologia do Projeto</h3>
             <div class="rounded-xl border border-slate-700 overflow-hidden bg-white">${reportMapSVG()}</div>
-            <p class="text-[10px] text-slate-500 mt-2">Desenho organizado automaticamente (CTO à esquerda, ONTs à direita). Cinza = Drop Low Friction · branco com contorno = Cabo Micro Low · tracejado azul-claro = Fibra Invisível · amarelo = cordão óptico · roxo = RJ45 1,5 m · azul = RJ45 em metros · verde pontilhado = Wi-Fi.</p>
+            <p class="text-[10px] text-slate-500 mt-2">Desenho organizado automaticamente (CTO à esquerda, ONTs à direita). Cinza = Drop Low Friction · branco com contorno = Cabo Micro Low · tracejado azul-claro = Fibra Invisível · amarelo = cordão óptico · roxo = RJ45 1,5 m · azul = PONTO ULTRA (RJ45 em metros) · verde pontilhado = Wi-Fi.</p>
           </div>` : ''}
           <div>
             <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">2. Levantamento de Materiais</h3>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              ${Object.keys(metros).map(t => card(GPON_CABLES[t].name, metros[t] + 'm')).join('')}${card('Conectores', conectores + ' un.', 'text-amber-300')}${rjN ? card('Cabo RJ45', rjM + 'm') : ''}${patches ? card('RJ45 1,5 m', patches + ' un.') : ''}${rjN + patches ? card('Conectores RJ45', 2 * (rjN + patches) + ' un.') : ''}${wifiN ? card('Pontos por Wi-Fi', wifiN + ' un.') : ''}${card('Cordões ópticos', cordoes + ' un.' + (cordaoM ? ` · ${cordaoM}m` : ''))}${card('Componentes', nodes.length + ' un.', 'text-emerald-400')}
+              ${Object.keys(metros).map(t => card(GPON_CABLES[t].name, metros[t] + 'm')).join('')}${card('Conectores', conectores + ' un.', 'text-amber-300')}${rjN ? card('PONTO ULTRA (RJ45)', rjM + 'm') : ''}${patches ? card('RJ45 1,5 m', patches + ' un.') : ''}${rjN + patches ? card('Conectores RJ45', 2 * (rjN + patches) + ' un.') : ''}${wifiN ? card('Pontos por Wi-Fi', wifiN + ' un.') : ''}${card('Cordões ópticos', cordoes + ' un.' + (cordaoM ? ` · ${cordaoM}m` : ''))}${card('Componentes', nodes.length + ' un.', 'text-emerald-400')}
             </div>
             ${countsHTML ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Componentes por modelo</span><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-[11px]">${countsHTML}</div></div>` : ''}
-            ${nodes.some(isNetDev) ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV</span>${nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('')}</div>` : ''}
+            ${nodes.some(isNetDev) ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV e dispositivos</span>${nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) + (c.cableType === 'Wi-Fi' ? ' ' + (c.band === '2.4' ? '2,4' : '5') + ' GHz' + (sigVal(c.rssi) != null ? ' · RSSI ' + fmtDb(sigVal(c.rssi)) : '') : '') : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('')}</div>` : ''}
           </div>
           <div>
             <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">3. Sinal nas ONTs</h3>
@@ -1300,7 +1324,7 @@
       { id: 'cabos', label: 'Cabos', icon: 'fa-bezier-curve', groups: [
         { label: 'Rede · EMTA → ponto de TV', items: [
           { cable: 'RJ45 1,5 m', name: 'RJ45 1,5 m', tag: 'Box TV', info: 'Cabo RJ45 padrão de 1,5 m (roxo): Box TV via IP. Sai de uma porta LAN do EMTA.' },
-          { cable: 'RJ45', name: 'RJ45 em metros', tag: 'Sound Box', info: 'Cabo RJ45 confeccionado em metros, conectores inclusos (azul): Sound Box. Até 100 m.' },
+          { cable: 'RJ45', name: 'PONTO ULTRA', tag: 'RJ45 em metros', info: 'PONTO ULTRA: cabo de rede RJ45 em metros, conectores inclusos (azul). Sound Box, Box TV com mais de 1,5 m, Smart TV, Video-game, PC. Até 100 m.' },
           { cable: 'Wi-Fi', name: 'Wi-Fi', tag: 'sem cabo', info: 'Wi-Fi do EMTA (verde pontilhado): Box TV pode; na Sound Box não é recomendado.' }
         ] },
         { label: 'Tipo de cabo coaxial', items: [
@@ -1311,10 +1335,12 @@
       ] },
       { id: 'equip', label: 'Equipamentos', icon: 'fa-hard-drive', groups: [
         { label: 'Pontos de TV via IP (no EMTA, até 3)', items: [
-          { type: 'boxtv', name: 'Box TV via IP', tag: 'Wi-Fi · RJ45 1,5 m', info: 'Box TV via IP: liga no EMTA por Wi-Fi ou pelo cabo RJ45 padrão de 1,5 m. Clique numa porta LAN ou no Wi-Fi do EMTA e depois no Box TV.' },
-          { type: 'soundbox', name: 'Sound Box', tag: 'RJ45 em metros', info: 'Sound Box: liga no EMTA, de preferência por cabo RJ45 em metros (conectores inclusos). O Wi-Fi funciona, mas não é recomendado.' }
+          { type: 'boxtv', name: 'Box TV via IP', tag: 'Wi-Fi · RJ45 1,5 m', info: 'Box TV via IP: liga no EMTA por Wi-Fi, pelo cabo RJ45 padrão de 1,5 m ou, para mais longe, por PONTO ULTRA. Clique numa porta LAN ou no Wi-Fi do EMTA e depois no Box TV.' },
+          { type: 'tvapp', name: 'TV APP', tag: 'Wi-Fi · RJ45 1,5 m', info: 'TV APP: Smart TV com o aplicativo de TV. Mesmas regras do Box TV: liga no EMTA por Wi-Fi (5 GHz, RSSI até −60 dBm), cabo RJ45 1,5 m ou, para mais longe, PONTO ULTRA.' },
+          { type: 'soundbox', name: 'Sound Box', tag: 'PONTO ULTRA', info: 'Sound Box: liga no EMTA, de preferência por PONTO ULTRA (cabo de rede em metros). O Wi-Fi funciona, mas não é recomendado.' }
         ] },
-        { label: 'Tipo de equipamento do cliente', items: ['modem', 'tv', 'box'].map(t => ({ type: t, name: t === 'box' ? 'Box TV via HFC' : EQUIP[t].label, tag: 'CA CB RX TX', info: `${EQUIP[t].label}: ${EQUIP[t].sub} · padrão TX 38 a 51, RX −12 a 12, CA e CB ≥ 0` })) }
+        { label: 'Tipo de equipamento do cliente', items: ['modem', 'tv', 'box'].map(t => ({ type: t, name: t === 'box' ? 'Box TV via HFC' : EQUIP[t].label, tag: 'CA CB RX TX', info: `${EQUIP[t].label}: ${EQUIP[t].sub} · padrão TX 38 a 51, RX −12 a 12, CA e CB ≥ 0` })) },
+        { label: 'Dispositivos na rede (EMTA)', items: ['smarttv', 'videogame', 'pc', 'notebook'].map(t => ({ type: t, name: NET_DEV[t].label, tag: 'Wi-Fi · ULTRA', info: `${NET_DEV[t].label}: liga no EMTA por Wi-Fi (5 GHz, RSSI até −60 dBm) ou por cabo de rede PONTO ULTRA.` })) },
       ] },
       { id: 'origem', label: 'Origem', icon: 'fa-tower-cell', groups: [
         { label: 'TAP Rede externa', items: TAP_VIAS.map(v => ({ type: 'tap' + v, name: `TAP ${v} vias`, tag: `${v} cabos`, info: `${tapName(v)}: origem do sinal, aceita até ${v} cabos (um por via), com níveis CA/CB/RX/TX editáveis` })) },
@@ -1333,7 +1359,7 @@
       { id: 'cabos', label: 'Fibras e rede', icon: 'fa-bezier-curve', groups: [
         { label: 'Rede · ONT → ponto de TV', items: [
           { cable: 'RJ45 1,5 m', name: 'RJ45 1,5 m', tag: 'Box TV', info: 'Cabo RJ45 padrão de 1,5 m (cor roxa): usado no Box TV. Sai de uma porta LAN da ONT.' },
-          { cable: 'RJ45', name: 'RJ45 em metros', tag: 'Sound Box', info: 'Cabo RJ45 confeccionado em metros, conectores inclusos (azul): usado na Sound Box. Até 100 m.' },
+          { cable: 'RJ45', name: 'PONTO ULTRA', tag: 'RJ45 em metros', info: 'PONTO ULTRA: cabo de rede RJ45 em metros, conectores inclusos (azul). Sound Box, Box TV com mais de 1,5 m, Smart TV, Video-game, PC. Até 100 m.' },
           { cable: 'Wi-Fi', name: 'Wi-Fi', tag: 'sem cabo', info: 'Wi-Fi da ONT (verde pontilhado): Box TV pode; na Sound Box não é recomendado.' }
         ] },
         { label: 'Tipo de ligação óptica', items: [
@@ -1346,9 +1372,11 @@
       { id: 'equip', label: 'Equipamentos', icon: 'fa-hard-drive', groups: [
         { label: 'Pontos de TV (até 3 por ONT)', items: [
           { type: 'boxtv', name: 'Box TV', tag: 'Wi-Fi · RJ45 1,5 m', info: 'Box TV (redondo): liga na ONT por Wi-Fi ou pelo cabo RJ45 padrão de 1,5 m. Clique numa porta LAN ou no Wi-Fi da ONT e depois no Box TV.' },
+          { type: 'tvapp', name: 'TV APP', tag: 'Wi-Fi · RJ45 1,5 m', info: 'TV APP: Smart TV com o aplicativo de TV. Mesmas regras do Box TV: liga na ONT por Wi-Fi (5 GHz, RSSI até −60 dBm), cabo RJ45 1,5 m ou, para mais longe, PONTO ULTRA.' },
           { type: 'soundbox', name: 'Sound Box', tag: 'RJ45 em metros', info: 'Sound Box (quadrada): de preferência por cabo RJ45 em metros (conectores inclusos). O Wi-Fi funciona, mas não é recomendado.' }
         ] },
-        { label: 'Equipamento do cliente', items: [{ type: 'ont', name: 'ONT/ONU', tag: 'dBm', info: 'ONT = ONU: RX OK de −8 a −27 dBm; fora disso fica vermelho' }] }
+        { label: 'Equipamento do cliente', items: [{ type: 'ont', name: 'ONT/ONU', tag: 'dBm', info: 'ONT = ONU: RX OK de −8 a −27 dBm; fora disso fica vermelho' }] },
+        { label: 'Dispositivos na rede (ONT)', items: ['smarttv', 'videogame', 'pc', 'notebook'].map(t => ({ type: t, name: NET_DEV[t].label, tag: 'Wi-Fi · ULTRA', info: `${NET_DEV[t].label}: liga na ONT por Wi-Fi (5 GHz, RSSI até −60 dBm) ou por cabo de rede PONTO ULTRA.` })) },
       ] },
       { id: 'origem', label: 'Origem', icon: 'fa-tower-cell', groups: [
         { label: 'CTO = NAP', items: CTO_VIAS.map(v => ({ type: 'cto' + v, name: `CTO ${v} portas`, tag: 'dBm na porta', info: `${ctoName(v)}: origem do sinal óptico; informe a potência medida na porta (NAP/DIO: 0 a −25 dBm)` })) }
@@ -1548,13 +1576,13 @@
     }
 
     // HFC: as TVs do projeto são todas via HFC (Decoder, Box TV coaxial) ou todas via IP (Box TV via IP, Sound Box)
-    const TV_KIND = { tv: 'hfc', box: 'hfc', boxtv: 'ip', soundbox: 'ip' };
+    const TV_KIND = { tv: 'hfc', box: 'hfc', boxtv: 'ip', tvapp: 'ip', soundbox: 'ip' };
     const projectTvKind = () => { const n = nodes.find(x => TV_KIND[x.type]); return n ? TV_KIND[n.type] : null; };
     function addNode(type, x, y) {
       if (!isGpon() && TV_KIND[type] && projectTvKind() && projectTvKind() !== TV_KIND[type]) {
         showToast(projectTvKind() === 'hfc'
-          ? 'Este projeto já tem TV via HFC (Decoder ou Box TV coaxial). As TVs são todas via HFC ou todas via IP: remova as TVs via HFC para usar Box TV via IP ou Sound Box.'
-          : 'Este projeto já tem TV via IP (Box TV via IP ou Sound Box). As TVs são todas via HFC ou todas via IP: remova as TVs via IP para usar Decoder ou Box TV via HFC.', 'warning');
+          ? 'Este projeto já tem TV via HFC (Decoder ou Box TV coaxial). As TVs são todas via HFC ou todas via IP: remova as TVs via HFC para usar Box TV via IP, TV APP ou Sound Box.'
+          : 'Este projeto já tem TV via IP (Box TV via IP, TV APP ou Sound Box). As TVs são todas via HFC ou todas via IP: remova as TVs via IP para usar Decoder ou Box TV via HFC.', 'warning');
         return;
       }
       const id = 'node_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
@@ -1675,19 +1703,19 @@
     // ONT → ponto de TV: Wi-Fi (sem cabo), Box TV no RJ45 1,5 m, Sound Box no RJ45 em metros
     function connectNet(ont, portId, dev) {
       linkSource = null;
-      if (portId !== 'wifi' && dev.type === 'soundbox') {
+      if (portId !== 'wifi' && !usesPatch(dev)) {
         pendingConn = { from: ont.id, fromPort: portId, to: dev.id, cableType: 'RJ45' };
         render();
         openLengthPopup();
         return;
       }
       const wifi = portId === 'wifi';
-      const c = { id: uid('conn'), from: ont.id, fromPort: portId, to: dev.id, cableType: wifi ? 'Wi-Fi' : 'RJ45 1,5 m', length: wifi ? 0 : PATCH_M };
+      const c = { id: uid('conn'), from: ont.id, fromPort: portId, to: dev.id, cableType: wifi ? 'Wi-Fi' : 'RJ45 1,5 m', length: wifi ? 0 : PATCH_M, ...(wifi ? { band: '5', rssi: '' } : {}) };
       connections.push(c);
       selection.clear(); selectedNodeId = null; selectedConnectionId = c.id;
       refresh();
       if (wifi && dev.type === 'soundbox') showToast('Sound Box ligada por Wi-Fi: funciona, mas não é recomendado. Prefira cabo RJ45.', 'warning');
-      else showToast(`${dev.name} ligado ${wifi ? 'por Wi-Fi' : 'com cabo RJ45 1,5 m'} na ${ont.name}.`, 'success');
+      else showToast(`${dev.name} ligado ${wifi ? 'por Wi-Fi (' + wifiRule() + ')' : 'com cabo RJ45 1,5 m (para mais de 1,5 m use PONTO ULTRA)'} na ${ont.name}.`, 'success');
     }
 
     // --- POP-UP DE DISTÂNCIA DO CABO ---
@@ -1704,7 +1732,7 @@
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comprimento (metros)</span>
             <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 8" class="${inCls}">
           </label>
-          <p class="text-[10px] text-slate-400 leading-snug">Cabo RJ45 confeccionado, conectores inclusos nas duas pontas. Até ${RJ45_MAX} m.</p>` : !gp ? `
+          <p class="text-[10px] text-slate-400 leading-snug">PONTO ULTRA: cabo de rede RJ45 confeccionado, conectores inclusos nas duas pontas. Até ${RJ45_MAX} m.</p>` : !gp ? `
           <label class="block">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Distância (metros)</span>
             <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 15" class="${inCls}">
@@ -1713,7 +1741,7 @@
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comprimento (metros)</span>
             <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 8" class="${inCls}">
           </label>
-          <p class="text-[10px] text-slate-400 leading-snug">Cabo RJ45 confeccionado, conectores inclusos nas duas pontas. Até ${RJ45_MAX} m.</p>` : cordao ? `
+          <p class="text-[10px] text-slate-400 leading-snug">PONTO ULTRA: cabo de rede RJ45 confeccionado, conectores inclusos nas duas pontas. Até ${RJ45_MAX} m.</p>` : cordao ? `
           <label class="block">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comprimento (metros)</span>
             <input id="length-popup-input" type="text" inputmode="decimal" autocomplete="off" value="2" class="${inCls}">
@@ -1791,7 +1819,7 @@
         selectedConnectionId = conn.id;
         selectedNodeId = null;
         refresh();
-        showToast(`Cabo RJ45 de ${length} m ligado: ${byId(conn.to).name} fica online quando ${GW().A.toLowerCase()} estiver com sinal OK.`, 'success');
+        showToast(`PONTO ULTRA de ${length} m ligado: ${byId(conn.to).name} fica online quando ${GW().A.toLowerCase()} estiver com sinal OK.`, 'success');
         return;
       }
       if (isGpon()) {
@@ -2583,7 +2611,7 @@
           </div>
           ${levelsGridHTML(d)}
           <div class="mt-2 flex justify-between items-center gap-1 text-[12px] [&>span]:text-[11px]">${fixChip(n)}${statusBadge(d.status)}</div>
-          <div class="mt-1.5 pb-2 text-[11px] text-slate-500"><i class="fa-solid fa-tv"></i> Pontos de TV via IP: <b class="text-slate-300">${netCount(n.id)}/${NET_MAX_TV}</b></div>
+          <div class="mt-1.5 pb-2 text-[11px] text-slate-500"><i class="fa-solid fa-tv"></i> Pontos de TV via IP: <b class="text-slate-300">${netCount(n.id)}/${NET_MAX_TV}</b>${devCount(n.id) ? ` · dispositivos: <b class="text-slate-300">${devCount(n.id)}</b>` : ''}</div>
         </div>
       `;
     }
@@ -3488,7 +3516,7 @@
           </div>` : ''; })()}
           ${originAlerts().map(a => `<div class="text-[11px] leading-snug text-amber-200 bg-amber-950/70 border border-amber-600/70 rounded-lg px-2 py-1.5"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> <b>Alerta na origem:</b> ${esc(a.text)}</div>`).join('')}
 
-          ${nodes.some(isNetDev) ? `<div class="space-y-1"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pontos de TV</label>${nodes.filter(isNetDev).map(n => `<button data-id="${esc(n.id)}" onclick="selectNode(this.dataset.id)" class="w-full flex items-center justify-between gap-2 bg-slate-950 hover:bg-slate-800/70 border border-slate-800 rounded-lg px-2 py-1"><span class="text-[11px] font-bold text-slate-100 truncate">${esc(n.name)}</span><span class="net-chip net-${netState(n).st}">● ${netState(n).text.split(' · ')[0]}</span></button>`).join('')}</div>` : ''}
+          ${nodes.some(isNetDev) ? `<div class="space-y-1"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pontos de TV e dispositivos</label>${nodes.filter(isNetDev).map(n => `<button data-id="${esc(n.id)}" onclick="selectNode(this.dataset.id)" class="w-full flex items-center justify-between gap-2 bg-slate-950 hover:bg-slate-800/70 border border-slate-800 rounded-lg px-2 py-1"><span class="text-[11px] font-bold text-slate-100 truncate">${esc(n.name)}</span><span class="net-chip net-${netState(n).st}">● ${netState(n).text.split(' · ')[0]}</span></button>`).join('')}</div>` : ''}
           ${eps.length ? `<ul class="space-y-1.5">${list}</ul>` : `<p class="text-xs text-slate-500 text-center py-4">Nenhum equipamento de cliente no projeto.</p>`}
 
           ${isGpon() ? gponLimitsHTML() : `<details class="niveis border-t border-slate-800 pt-1" ${limitsOpen ? 'open' : ''} ontoggle="limitsOpen = this.open">
@@ -3765,32 +3793,46 @@
     function setNetLinkType(c, val) {
       const dev = byId(c.to), ont = byId(c.from);
       if (!dev || !ont) return;
-      if (val === 'RJ45 1,5 m' && dev.type === 'soundbox') { showToast('A Sound Box usa cabo RJ45 em metros.', 'warning'); renderProperties(); return; }
-      if (val === 'RJ45' && dev.type === 'boxtv') { showToast(`O Box TV usa o cabo RJ45 padrão de ${String(PATCH_M).replace('.', ',')} m.`, 'warning'); renderProperties(); return; }
-      if (val === 'Wi-Fi') { c.fromPort = 'wifi'; c.length = 0; }
+      if (val === 'RJ45 1,5 m' && !usesPatch(dev)) { showToast('O cabo RJ45 1,5 m é do Box TV e da TV APP. Para os outros aparelhos use PONTO ULTRA.', 'warning'); renderProperties(); return; }
+      if (val === 'Wi-Fi') { c.fromPort = 'wifi'; c.length = 0; c.band = c.band || '5'; c.rssi = c.rssi == null ? '' : c.rssi; }
       else {
         let port = String(c.fromPort).startsWith('lan') ? c.fromPort : null;
         if (!port) { const free = ONT_PORTS.find(x => x.id.startsWith('lan') && !portConn(ont.id, x.id)); port = free && free.id; }
         if (!port) { showToast('Não há porta LAN livre na ONT.', 'warning'); renderProperties(); return; }
         c.fromPort = port;
         c.length = val === 'RJ45 1,5 m' ? PATCH_M : (c.cableType === 'RJ45' && Number(c.length) > 0 ? c.length : 5);
+        delete c.band; delete c.rssi;
       }
       c.cableType = val;
       refresh();
-      if (val === 'Wi-Fi' && dev.type === 'soundbox') showToast('Sound Box por Wi-Fi: não recomendado. Prefira cabo RJ45.', 'warning');
-      else if (val === 'RJ45') showToast(`Cabo RJ45 de ${c.length} m: ajuste a metragem no painel.`, 'info');
+      if (val === 'Wi-Fi' && dev.type === 'soundbox') showToast('Sound Box por Wi-Fi: não recomendado. Prefira PONTO ULTRA.', 'warning');
+      else if (val === 'Wi-Fi') showToast(wifiRule(), 'info');
+      else if (val === 'RJ45') showToast(`PONTO ULTRA de ${c.length} m: ajuste a metragem no painel.`, 'info');
     }
     function updateNetLength(val) {
       const c = connById(selectedConnectionId);
       if (!c || c.cableType !== 'RJ45') return;
       const v = parseFloat(String(val).replace(',', '.'));
-      if (isNaN(v) || v <= 0 || v > RJ45_MAX) { showToast(`Comprimento do RJ45: maior que zero e até ${RJ45_MAX} m.`, 'warning'); renderProperties(); return; }
+      if (isNaN(v) || v <= 0 || v > RJ45_MAX) { showToast(`Comprimento do PONTO ULTRA: maior que zero e até ${RJ45_MAX} m.`, 'warning'); renderProperties(); return; }
+      if (usesPatch(byId(c.to)) && v <= PATCH_M) { showToast(`No ${byId(c.to).name}, até 1,5 m use o cabo RJ45 1,5 m; o PONTO ULTRA é para distâncias maiores.`, 'warning'); renderProperties(); return; }
       c.length = v;
+      refresh();
+    }
+    function updateWifi(key, val) {
+      const c = connById(selectedConnectionId);
+      if (!c || c.cableType !== 'Wi-Fi') return;
+      if (key === 'band') c.band = val === '2.4' ? '2.4' : '5';
+      else {
+        const t = String(val).trim().replace(',', '.'), v = parseFloat(t);
+        if (t === '') c.rssi = '';
+        else if (isNaN(v) || v > 0 || v < -100) { showToast('RSSI em dBm: de −100 a 0 (ex.: −55).', 'warning'); renderProperties(); return; }
+        else c.rssi = Math.round(v * 10) / 10;
+      }
       refresh();
     }
     function netLinkPanelHTML(c) {
       const ont = byId(c.from), dev = byId(c.to), ns = netState(dev);
-      const opts = [['Wi-Fi', 'Wi-Fi'], ...(dev.type === 'boxtv' ? [['RJ45 1,5 m', 'Cabo RJ45 1,5 m']] : [['RJ45', 'Cabo RJ45 em metros']])];
+      const opts = [['Wi-Fi', 'Wi-Fi'], ...(usesPatch(dev) ? [['RJ45 1,5 m', 'Cabo RJ45 1,5 m']] : []), ['RJ45', 'PONTO ULTRA (RJ45 em metros)']];
       const X = `<button onclick="closePanel()" class="panel-close ml-1" title="Fechar o painel (P)"><i class="fa-solid fa-xmark"></i></button>`;
       return `
         <div class="space-y-3">
@@ -3806,9 +3848,17 @@
             </select>
           </div>
           ${c.cableType === 'RJ45' ? `<div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comprimento (m) · conectores inclusos</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">PONTO ULTRA · comprimento (m) · conectores inclusos</label>
             <input type="number" min="1" max="${RJ45_MAX}" step="0.5" value="${esc(c.length)}" onchange="updateNetLength(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-mono font-bold">
-          </div>` : c.cableType === 'RJ45 1,5 m' ? `<p class="text-[11px] text-slate-400">Cabo RJ45 padrão de 1,5 m, conectores inclusos.</p>` : `<p class="text-[11px] text-slate-400">Sem cabo: usa o Wi-Fi da ONT.</p>`}
+          </div>` : c.cableType === 'RJ45 1,5 m' ? `<p class="text-[11px] text-slate-400">Cabo RJ45 padrão de 1,5 m, conectores inclusos.</p>` : `<div class="grid grid-cols-2 gap-1.5">
+              <label class="block"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Rede</span>
+                <select onchange="updateWifi('band', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-semibold">
+                  <option value="5" ${c.band !== '2.4' ? 'selected' : ''}>5 GHz</option><option value="2.4" ${c.band === '2.4' ? 'selected' : ''}>2,4 GHz</option>
+                </select></label>
+              <label class="block"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">RSSI (dBm)</span>
+                <input type="text" inputmode="decimal" placeholder="ex.: -55" value="${sigVal(c.rssi) == null ? '' : esc(c.rssi)}" onchange="updateWifi('rssi', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-mono font-bold"></label>
+            </div>
+            <p class="text-[11px] text-amber-300 leading-snug"><i class="fa-solid fa-triangle-exclamation"></i> ${wifiRule()}</p>`}
           <div><span class="net-chip net-${ns.st}">● ${ns.text}</span><p class="text-[11px] text-slate-400 mt-1">${esc(ns.why)}</p></div>
         </div>`;
     }
@@ -3818,19 +3868,19 @@
       let rjM = 0, rjN = 0, patches = 0, wifiN = 0;
       connections.forEach(c => { if (c.cableType === 'RJ45') { rjN++; rjM += Number(c.length || 0); } else if (c.cableType === 'RJ45 1,5 m') patches++; else if (c.cableType === 'Wi-Fi') wifiN++; });
       const card = (t, v) => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold">${t}</span><strong class="text-lg text-slate-100 font-mono">${v}</strong></div>`;
-      const list = nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('');
-      return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">${card('Cabo RJ45', rjM + 'm')}${card('RJ45 1,5 m', patches + ' un.')}${card('Conectores RJ45', 2 * (rjN + patches) + ' un.')}${card('Pontos por Wi-Fi', wifiN + ' un.')}</div>
-        <div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV via IP</span>${list}</div>`;
+      const list = nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) + (c.cableType === 'Wi-Fi' ? ' ' + (c.band === '2.4' ? '2,4' : '5') + ' GHz' + (sigVal(c.rssi) != null ? ' · RSSI ' + fmtDb(sigVal(c.rssi)) : '') : '') : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('');
+      return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">${card('PONTO ULTRA (RJ45)', rjM + 'm')}${card('RJ45 1,5 m', patches + ' un.')}${card('Conectores RJ45', 2 * (rjN + patches) + ' un.')}${card('Pontos por Wi-Fi', wifiN + ' un.')}</div>
+        <div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV e dispositivos na rede</span>${list}</div>`;
     }
     function netDevPanelHTML(n) {
       const ns = netState(n), c = inputConn(n.id);
       return `
         <div class="border-t border-slate-800 pt-2 space-y-1.5">
-          <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">Ponto de TV</label>
+          <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">${isTvPoint(n) ? 'Ponto de TV' : 'Dispositivo na rede'}</label>
           <div><span class="net-chip net-${ns.st}">● ${ns.text}</span></div>
           <p class="text-[11px] text-slate-400 leading-snug">${esc(ns.why)}</p>
           ${c ? `<button data-id="${esc(c.id)}" onclick="selectConnection(this.dataset.id)" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold">Editar a ligação (${esc(gponCableLabel(c))})</button>` : ''}
-          <p class="text-[10px] text-slate-500 leading-snug">${n.type === 'boxtv' ? 'Box TV via IP: Wi-Fi ou cabo RJ45 padrão de 1,5 m.' : 'Sound Box: de preferência cabo RJ45 em metros; Wi-Fi não recomendado.'} Até ${NET_MAX_TV} pontos de TV ${GW().por}.</p>
+          <p class="text-[10px] text-slate-500 leading-snug">${usesPatch(n) ? NET_DEV[n.type].label + ' via IP: Wi-Fi, cabo RJ45 1,5 m ou PONTO ULTRA (acima de 1,5 m).' : n.type === 'soundbox' ? 'Sound Box: de preferência PONTO ULTRA; Wi-Fi não recomendado.' : NET_DEV[n.type].label + ': Wi-Fi ou PONTO ULTRA (cabo de rede em metros).'} ${isTvPoint(n) ? 'Até ' + NET_MAX_TV + ' pontos de TV ' + GW().por + '.' : 'Dispositivo da rede do cliente.'} ${wifiRule()}</p>
         </div>`;
     }
     function updateCableLength(val) {
@@ -4164,7 +4214,7 @@
         mode: projectMode,
         limits,
         nodes: nodes.map(n => ({ id: n.id, type: n.type, name: n.name, x: Math.round(n.x * 10) / 10, y: Math.round(n.y * 10) / 10, rot: n.rot || 0, signals: n.signals || {}, inSide: n.inSide || 'auto', outSide: n.outSide || 'auto', ...(n.type === 'tap' ? { vias: tapVias(n), ...(isDG(n) ? { model: 'dg' } : isCTO(n) ? { model: 'cto', tec: n.tec || 'GPON' } : {}) } : {}) })),
-        connections: connections.map(c => ({ id: c.id, from: c.from, fromPort: c.fromPort, to: c.to, cableType: c.cableType, length: c.length, ...(c.conectores != null ? { conectores: c.conectores } : {}) }))
+        connections: connections.map(c => ({ id: c.id, from: c.from, fromPort: c.fromPort, to: c.to, cableType: c.cableType, length: c.length, ...(c.conectores != null ? { conectores: c.conectores } : {}), ...(c.cableType === 'Wi-Fi' ? { band: c.band || '5', rssi: c.rssi == null ? '' : c.rssi } : {}) }))
       });
     }
     function scheduleCommit() {
@@ -5298,7 +5348,7 @@
         used.add(port.id);
         inputs.add(dst.id);
         const len = Number(c.length);
-        kept.push({ id: c.id || ('conn_' + i), from: src.id, fromPort: port.id, to: dst.id, cableType: isGpon() ? (isGponCable(c.cableType) ? c.cableType : 'Drop') : isDG(src) ? DG_CABLE : (cableAttenuation[c.cableType] ? c.cableType : 'RG6'), length: isNaN(len) || len < 0 ? 10 : len, ...(isGpon() && c.cableType !== 'Cordão óptico' ? { conectores: Math.max(0, Math.min(20, Math.round(Number(c.conectores)) || 0)) } : {}) });
+        kept.push({ id: c.id || ('conn_' + i), from: src.id, fromPort: port.id, to: dst.id, cableType: isNetCable(c.cableType) ? c.cableType : isGpon() ? (isGponCable(c.cableType) ? c.cableType : 'Drop') : isDG(src) ? DG_CABLE : (cableAttenuation[c.cableType] ? c.cableType : 'RG6'), length: isNaN(len) || len < 0 ? 10 : len, ...(c.cableType === 'Wi-Fi' ? { band: c.band === '2.4' ? '2.4' : '5', rssi: sigVal(c.rssi) == null ? '' : sigVal(c.rssi) } : {}), ...(isGpon() && !isNetCable(c.cableType) && c.cableType !== 'Cordão óptico' ? { conectores: Math.max(0, Math.min(20, Math.round(Number(c.conectores)) || 0)) } : {}) });
       });
       connections = kept;
       limits = { ...DEFAULT_LIMITS };   // níveis padrão fixos

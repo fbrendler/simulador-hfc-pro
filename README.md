@@ -1,6 +1,6 @@
 # Simulador PRO HFC/G-PON/XGS-PON
 
-**Versão Prévia 0.34** · by BRENDLER™
+**Versão Prévia 0.35** · by BRENDLER™
 
 Simulador de projetos de rede coaxial (TV e banda larga HFC) e de fibra óptica (GPON / XGS-PON) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
@@ -15,11 +15,12 @@ Simulador de projetos de rede coaxial (TV e banda larga HFC) e de fibra óptica 
 - Alerta de TX na origem: TAP 36 a 43, DG 37 a 43; CA acima de 22 ou CB acima de 16 na origem = possível sinal desalinhado.
 - Começa de qualquer ponto: o sinal medido num equipamento ou passivo vira a base e recalcula toda a rede (mesmo sem TAP/DG).
 - Cabo drop que sai do TAP leva CABLE ISOLATOR automático, seguido de RG6 Branco.
-- TVs do projeto: todas via HFC (Decoder, Box TV coaxial) ou todas via IP (Box TV via IP e Sound Box no EMTA, por Wi-Fi ou cabo RJ45; até 3 pontos).
+- TVs do projeto: todas via HFC (Decoder, Box TV coaxial) ou todas via IP (Box TV via IP, TV APP e Sound Box no EMTA; até 3 pontos).
+- Rede do cliente (HFC e GPON): Box TV e TV APP por Wi-Fi, cabo RJ45 1,5 m ou PONTO ULTRA (acima de 1,5 m); Sound Box de preferência por PONTO ULTRA; dispositivos Smart TV, Video-game, PC e Notebook por Wi-Fi ou PONTO ULTRA (cabo de rede RJ45 em metros, até 100 m). Alerta de Wi-Fi: rede 5 GHz e RSSI até −60 dBm.
 - Sugestões de correção testadas no projeto (só aparecem as que funcionam).
 - Botão **Novo** (projeto em branco, exemplo ou arquivo), exemplos HFC de TV via HFC e via IP, Cenário+ (cenário em branco que salva sozinho), relatório técnico com desenho da topologia, salvar como JSON ou como HTML offline com o projeto dentro.
 
-- **Modo GPON / XGS-PON** (chave no topo): CTO 8/16 portas com potência em dBm, divisor 1:2 (3,5 dB), PTO (1 entrada e 1 saída, vertical), fibras Drop Low Friction, Cabo Micro Low e Fibra Invisível (metros + conectores), cordão óptico (1,0 a 1,6 dB) e ONT/ONU com MÍN e MÁX: RX OK de −8 a −27 dBm (fora disso, vermelho; não há faixa amarela). Potência na NAP/DIO esperada de 0 a −25 dBm (fora disso, alerta na origem). Pontos de TV na ONT (4 LAN + Wi-Fi, até 3): Box TV por Wi-Fi ou cabo RJ45 1,5 m; Sound Box por cabo RJ45 em metros (Wi-Fi não recomendado); selo online/offline.
+- **Modo GPON / XGS-PON** (chave no topo): CTO 8/16 portas com potência em dBm, divisor 1:2 (3,5 dB), PTO (1 entrada e 1 saída, vertical), fibras Drop Low Friction, Cabo Micro Low e Fibra Invisível (metros + conectores), cordão óptico (1,0 a 1,6 dB) e ONT/ONU com MÍN e MÁX: RX OK de −8 a −27 dBm (fora disso, vermelho; não há faixa amarela). Potência na NAP/DIO esperada de 0 a −25 dBm (fora disso, alerta na origem). Pontos de TV e dispositivos na ONT (4 LAN + Wi-Fi, até 3 pontos de TV), com selo online/offline.
 
 ## Reportar bug ou falar com o autor
 
