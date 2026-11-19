@@ -442,7 +442,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.37';   // Versão Prévia
+    const APP_VERSION = '0.38';   // Versão Prévia
     document.getElementById('sig-versao').textContent = 'Versão Prévia ' + APP_VERSION;
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
@@ -1055,7 +1055,7 @@
           ${napGroups(n).length > 1 ? '<p class="text-[10px] text-slate-500 leading-snug">A 2ª etiqueta segue a sequência da 1ª; se não for sequencial, edite.</p>' : ''}
           <div class="grid ${napGroups(n).length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-1.5">
             ${napGroups(n).map(([k], i) => `<label class="block"><span class="text-slate-400 text-[10px] block">${napGroups(n).length > 1 ? (i === 0 ? 'NAP portas 1–8' : 'NAP portas 9–16') : isDIO(n) ? 'DIO' : 'NAP'}</span>
-              <input type="text" maxlength="24" placeholder="${isDIO(n) ? 'ex.: MM.A195.03.03' : 'ex.: MMS 010103'}" value="${esc(napTag(n, i))}" onchange="updateNapTag(${i}, this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-amber-200 font-bold"></label>`).join('')}
+              <input type="text" maxlength="24" placeholder="${isDIO(n) ? 'ex.: MM.A195.03.03' : 'ex.: SNCAB 001.01.04'}" value="${esc(napTag(n, i))}" onchange="updateNapTag(${i}, this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-amber-200 font-bold"></label>`).join('')}
           </div>
           <label class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Potência na porta ${isDIO(n) ? 'do DIO' : 'da NAP'}</label>
           <div class="grid grid-cols-2 gap-1.5 text-xs">
@@ -1198,7 +1198,9 @@
       n.mount = mt === 'cordoalha' ? 'cordoalha' : 'poste';
       refresh();
     }
-    const NAP_TAG_PADRAO = 'MMS 010101', DIO_TAG_PADRAO = 'MM.A195.03.03';
+    // Etiquetas: DIO sempre começa com MM; NAP nunca começa com MM
+    const NAP_TAG_PADRAO = 'SNCAB 001.01.01', DIO_TAG_PADRAO = 'MM.A195.03.03';
+    const NAP_TAG_ANTIGA = ['MMS 010101', 'MMS 010102', 'MMS 010103', 'MMS 010104'];   // padrões da 0.37 (trocados ao abrir)
     function nextTag(tag) {
       const m = /(\d+)(\D*)$/.exec(tag || '');
       if (!m) return tag ? tag + ' 2' : '';
@@ -1220,6 +1222,7 @@
       const t = (n.tags || []).slice(0, 2), old0 = t[0];
       t[i] = String(val || '').trim().slice(0, 24);
       if (isDIO(n) && t[i] && !/^MM/i.test(t[i])) { showToast('A etiqueta do DIO começa sempre com MM (ex.: MM.A195.03.03).', 'warning'); renderProperties(); return; }
+      if (!isDIO(n) && t[i] && /^MM/i.test(t[i])) { showToast('Etiqueta de NAP não começa com MM (MM é do DIO). Ex.: SNCAB 001.01.04.', 'warning'); renderProperties(); return; }
       if (isDIO(n)) t[i] = t[i].toUpperCase();
       // mudou a 1ª: se a 2ª estava vazia ou seguia a sequência, acompanha (se foi editada à mão, fica como está)
       if (i === 0 && tapVias(n) === 16 && (!t[1] || t[1] === nextTag(old0))) t[1] = nextTag(t[0]);
@@ -1307,7 +1310,7 @@
       setActiveScenario(null);
       setModeQuiet('gpon');
       nodes = [
-        { id: 'cto', type: 'tap', model: 'cto', tec: 'GPON', name: ctoName(8), vias: 8, x: 24, y: 90, tags: ['MMS 010103'], signals: { pot: -20 } },
+        { id: 'cto', type: 'tap', model: 'cto', tec: 'GPON', name: ctoName(8), vias: 8, x: 24, y: 90, tags: ['SNCAB 001.01.04'], signals: { pot: -20 } },
         { id: 'pto', type: 'pto', name: 'PTO', x: 330, y: 250, signals: {} },
         { id: 'ont', type: 'ont', name: 'ONT 1', x: 520, y: 420, signals: {} },
         { id: 'tv1', type: 'boxtv', name: 'Box TV 1', x: 780, y: 640, signals: {} }
@@ -5797,6 +5800,7 @@
           if (n.org !== 'dio') delete n.org; else n.vias = 8;
           if (n.org === 'dio') delete n.mount; else n.mount = n.mount === 'cordoalha' ? 'cordoalha' : 'poste';
           n.tags = Array.isArray(n.tags) ? n.tags.slice(0, n.vias === 16 ? 2 : 1).map(t => String(t || '').trim().slice(0, 24)) : [];
+          if (n.org !== 'dio' && n.tags.length && n.tags.every(t => !t || NAP_TAG_ANTIGA.includes(t))) n.tags = n.vias === 16 ? [NAP_TAG_PADRAO, nextTag(NAP_TAG_PADRAO)] : [NAP_TAG_PADRAO];
           if (isDefaultCtoName(n.name)) n.name = ctoName(n.vias, n.org);
           n.tec = n.tec === 'XGS-PON' ? 'XGS-PON' : 'GPON';
           const pv = sigVal(n.signals.pot), pv2 = sigVal(n.signals.pot2);
