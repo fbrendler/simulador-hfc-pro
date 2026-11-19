@@ -1,6 +1,6 @@
 # Simulador PRO HFC/G-PON/XGS-PON
 
-**Versão Prévia 0.35** · by BRENDLER™
+**Versão Prévia 0.36** · by BRENDLER™
 
 Simulador de projetos de rede coaxial (TV e banda larga HFC) e de fibra óptica (GPON / XGS-PON) que roda direto no navegador, no PC, tablet ou celular deitado, inclusive sem internet.
 
@@ -16,7 +16,7 @@ Simulador de projetos de rede coaxial (TV e banda larga HFC) e de fibra óptica 
 - Começa de qualquer ponto: o sinal medido num equipamento ou passivo vira a base e recalcula toda a rede (mesmo sem TAP/DG).
 - Cabo drop que sai do TAP leva CABLE ISOLATOR automático, seguido de RG6 Branco.
 - TVs do projeto: todas via HFC (Decoder, Box TV coaxial) ou todas via IP (Box TV via IP, TV APP e Sound Box no EMTA; até 3 pontos).
-- Rede do cliente (HFC e GPON): Box TV e TV APP por Wi-Fi, cabo RJ45 1,5 m ou PONTO ULTRA (acima de 1,5 m); Sound Box de preferência por PONTO ULTRA; dispositivos Smart TV, Video-game, PC e Notebook por Wi-Fi ou PONTO ULTRA (cabo de rede RJ45 em metros, até 100 m). Alerta de Wi-Fi: rede 5 GHz e RSSI até −60 dBm.
+- Rede do cliente (HFC e GPON): Box TV e TV APP por Wi-Fi, cabo RJ45 1,5 m ou PONTO ULTRA (acima de 1,5 m); Sound Box de preferência por PONTO ULTRA; dispositivos Smart TV, Video-game, PC e Notebook por Wi-Fi ou PONTO ULTRA (cabo de rede RJ45 em metros, até 100 m). Alerta de Wi-Fi: rede 5 GHz e RSSI até −60 dBm. Aparelho offline: botão **conectar** com as opções de cada um (PONTO ULTRA com custo; grátis na Sound Box, que também aceita RJ45 1,5 m e pede confirmação para usar Wi-Fi).
 - Sugestões de correção testadas no projeto (só aparecem as que funcionam).
 - Botão **Novo** (projeto em branco, exemplo ou arquivo), exemplos HFC de TV via HFC e via IP, Cenário+ (cenário em branco que salva sozinho), relatório técnico com desenho da topologia, salvar como JSON ou como HTML offline com o projeto dentro.
 

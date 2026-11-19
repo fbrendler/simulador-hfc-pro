@@ -118,6 +118,19 @@
     html.light .net-on { color: #047857; background: #ecfdf5; }
     html.light .net-warn { color: #b45309; background: #fffbeb; }
     html.light .net-off { color: #be123c; background: #fff1f2; }
+    .net-connect { cursor: pointer; } .net-connect:hover { filter: brightness(1.25); box-shadow: 0 0 0 3px rgba(225, 29, 72, .25); }
+    #connect-menu { position: absolute; z-index: 40; width: 15.5rem; background: #0f172a; border: 1px solid #334155; border-radius: 0.75rem; padding: 0.5rem; box-shadow: 0 14px 34px rgba(0,0,0,.5); }
+    #connect-menu .cm-title { font-size: 12px; font-weight: 800; color: #f1f5f9; padding: 0.15rem 0.25rem 0.45rem; }
+    #connect-menu .cm-opt { display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left; padding: 0.45rem 0.55rem; border-radius: 0.5rem; border: 1px solid #1e293b; background: #020617; margin-top: 0.3rem; color: #93c5fd; }
+    #connect-menu .cm-opt:hover { background: #1e293b; border-color: #475569; }
+    #connect-menu .cm-opt b { display: block; font-size: 12px; color: #f1f5f9; } #connect-menu .cm-opt small { display: block; font-size: 10.5px; color: #94a3b8; }
+    #connect-menu .cm-cost small { color: #fbbf24; } #connect-menu .cm-free small { color: #34d399; } #connect-menu .cm-warn small { color: #fbbf24; } #connect-menu .cm-warn { color: #fbbf24; }
+    #connect-menu .cm-alert { font-size: 12px; color: #fde68a; background: rgba(120,53,15,.45); border: 1px solid #b45309; border-radius: 0.5rem; padding: 0.5rem; line-height: 1.35; }
+    #connect-menu .cm-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; } #connect-menu .cm-btn { flex: 1; padding: 0.4rem; border-radius: 0.5rem; font-size: 11.5px; font-weight: 800; }
+    #connect-menu .cm-sec { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; } #connect-menu .cm-warnbtn { background: #d97706; color: #111827; }
+    html.light #connect-menu { background: #fff; border-color: #c3ccd8; } html.light #connect-menu .cm-title, html.light #connect-menu .cm-opt b { color: #0f172a; }
+    html.light #connect-menu .cm-opt { background: #f8fafc; border-color: #d5dde7; color: #1d4ed8; } html.light #connect-menu .cm-opt small { color: #475569; }
+    html.light #connect-menu .cm-alert { color: #92400e; background: #fffbeb; }
     .port-wifi { display: flex; align-items: center; justify-content: center; font-size: 8px; color: #34d399; }
     /* Janela "Novo projeto" */
     #new-project { position: fixed; inset: 0; z-index: 60; background: rgba(2, 6, 23, 0.6); display: flex; align-items: center; justify-content: center; padding: 1rem; }
@@ -380,7 +393,7 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    const APP_VERSION = '0.35';   // Versão Prévia
+    const APP_VERSION = '0.36';   // Versão Prévia
     document.getElementById('sig-versao').textContent = 'Versão Prévia ' + APP_VERSION;
     // Cópia do arquivo como foi aberto (antes de qualquer desenho na tela): base para "Salvar HTML offline"
     const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
@@ -763,6 +776,8 @@
     const isNetDev = n => !!n && !!NET_DEV[n.type];
     const isTvPoint = n => isNetDev(n) && NET_DEV[n.type].kind === 'tv';
     const usesPatch = n => !!n && (n.type === 'boxtv' || n.type === 'tvapp');   // Box TV e TV APP: RJ45 1,5 m, PONTO ULTRA acima de 1,5 m ou Wi-Fi
+    const allowsPatch = n => usesPatch(n) || (!!n && n.type === 'soundbox');     // RJ45 1,5 m: Box TV, TV APP e Sound Box
+    const ultraCost = n => n && n.type === 'soundbox' ? 'grátis' : 'com custo ($)';   // PONTO ULTRA é grátis só para a Sound Box
     const WIFI_RSSI_MIN = -60;   // Wi-Fi: rede 5 GHz e RSSI até −60 dBm
     const ONT_LANS = 4, NET_MAX_TV = 3, RJ45_MAX = 100, PATCH_M = 1.5;
     const ONT_PORTS = [1, 2, 3, 4].map(i => ({ id: 'lan' + i, label: 'LAN ' + i, loss: 0 })).concat([{ id: 'wifi', label: 'Wi-Fi', loss: 0, multi: true }]);
@@ -821,7 +836,9 @@
               <span class="text-[11px] text-slate-400 block">${c ? (c.cableType === 'Wi-Fi' ? 'via Wi-Fi' : 'cabo ' + esc(gponCableLabel(c))) : 'não ligado'}</span>
             </div>
           </div>
-          <div class="mt-2"><span class="net-chip net-${ns.st}">● ${ns.text}</span></div>
+          <div class="mt-2">${ns.st === 'off'
+            ? `<button class="net-chip net-off net-connect" onclick="event.stopPropagation(); openConnectMenu('${esc(n.id)}', this)" onmousedown="event.stopPropagation()" title="Conectar: cabo RJ45 1,5 m, Wi-Fi ou PONTO ULTRA">● offline · <i class="fa-solid fa-plug"></i> conectar</button>`
+            : `<span class="net-chip net-${ns.st}">● ${ns.text}</span>`}</div>
           ${c && c.cableType === 'Wi-Fi' ? `<div class="mt-1.5 text-[11px] leading-snug text-amber-300"><i class="fa-solid fa-triangle-exclamation"></i> Use 5 GHz · RSSI até ${WIFI_RSSI_MIN} dBm${c.band === '2.4' ? ' · <b>agora 2,4 GHz</b>' : ''}${sigVal(c.rssi) != null ? ' · medido ' + fmtDb(sigVal(c.rssi)) : ''}</div>` : ''}
         </div>`;
     }
@@ -1231,7 +1248,7 @@
               ${Object.keys(metros).map(t => card(GPON_CABLES[t].name, metros[t] + 'm')).join('')}${card('Conectores', conectores + ' un.', 'text-amber-300')}${rjN ? card('PONTO ULTRA (RJ45)', rjM + 'm') : ''}${patches ? card('RJ45 1,5 m', patches + ' un.') : ''}${rjN + patches ? card('Conectores RJ45', 2 * (rjN + patches) + ' un.') : ''}${wifiN ? card('Pontos por Wi-Fi', wifiN + ' un.') : ''}${card('Cordões ópticos', cordoes + ' un.' + (cordaoM ? ` · ${cordaoM}m` : ''))}${card('Componentes', nodes.length + ' un.', 'text-emerald-400')}
             </div>
             ${countsHTML ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Componentes por modelo</span><div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-[11px]">${countsHTML}</div></div>` : ''}
-            ${nodes.some(isNetDev) ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV e dispositivos</span>${nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) + (c.cableType === 'Wi-Fi' ? ' ' + (c.band === '2.4' ? '2,4' : '5') + ' GHz' + (sigVal(c.rssi) != null ? ' · RSSI ' + fmtDb(sigVal(c.rssi)) : '') : '') : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('')}</div>` : ''}
+            ${nodes.some(isNetDev) ? `<div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV e dispositivos</span>${nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) + (c.cableType === 'RJ45' ? ' · ' + ultraCost(n) : '') + (c.cableType === 'Wi-Fi' ? ' ' + (c.band === '2.4' ? '2,4' : '5') + ' GHz' + (sigVal(c.rssi) != null ? ' · RSSI ' + fmtDb(sigVal(c.rssi)) : '') : '') : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('')}</div>` : ''}
           </div>
           <div>
             <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider mb-3">3. Sinal nas ONTs</h3>
@@ -1710,6 +1727,7 @@
         return;
       }
       const wifi = portId === 'wifi';
+      if (wifi && dev.type === 'soundbox' && !connectNet._ok) { render(); openConnectMenu(dev.id, null, 'wifi-confirm'); return; }
       const c = { id: uid('conn'), from: ont.id, fromPort: portId, to: dev.id, cableType: wifi ? 'Wi-Fi' : 'RJ45 1,5 m', length: wifi ? 0 : PATCH_M, ...(wifi ? { band: '5', rssi: '' } : {}) };
       connections.push(c);
       selection.clear(); selectedNodeId = null; selectedConnectionId = c.id;
@@ -1807,6 +1825,12 @@
       const input = document.getElementById('length-popup-input');
       const length = parseFloat(String(input.value).replace(',', '.'));
       if (pendingConn.cableType === 'RJ45') {
+        if (usesPatch(byId(pendingConn.to)) && !isNaN(length) && length > 0 && length <= PATCH_M) {
+          input.classList.add('border-rose-500');
+          input.focus();
+          showToast('Até 1,5 m use o cabo RJ45 1,5 m; o PONTO ULTRA é para distâncias maiores.', 'warning');
+          return;
+        }
         if (isNaN(length) || length <= 0 || length > RJ45_MAX) {
           input.classList.add('border-rose-500');
           input.focus();
@@ -1819,7 +1843,7 @@
         selectedConnectionId = conn.id;
         selectedNodeId = null;
         refresh();
-        showToast(`PONTO ULTRA de ${length} m ligado: ${byId(conn.to).name} fica online quando ${GW().A.toLowerCase()} estiver com sinal OK.`, 'success');
+        showToast(`PONTO ULTRA de ${length} m (${ultraCost(byId(conn.to))}) ligado: ${byId(conn.to).name} fica online quando ${GW().A.toLowerCase()} estiver com sinal OK.`, 'success');
         return;
       }
       if (isGpon()) {
@@ -3793,7 +3817,7 @@
     function setNetLinkType(c, val) {
       const dev = byId(c.to), ont = byId(c.from);
       if (!dev || !ont) return;
-      if (val === 'RJ45 1,5 m' && !usesPatch(dev)) { showToast('O cabo RJ45 1,5 m é do Box TV e da TV APP. Para os outros aparelhos use PONTO ULTRA.', 'warning'); renderProperties(); return; }
+      if (val === 'RJ45 1,5 m' && !allowsPatch(dev)) { showToast('O cabo RJ45 1,5 m é do Box TV, da TV APP e da Sound Box. Para os outros aparelhos use PONTO ULTRA.', 'warning'); renderProperties(); return; }
       if (val === 'Wi-Fi') { c.fromPort = 'wifi'; c.length = 0; c.band = c.band || '5'; c.rssi = c.rssi == null ? '' : c.rssi; }
       else {
         let port = String(c.fromPort).startsWith('lan') ? c.fromPort : null;
@@ -3818,6 +3842,78 @@
       c.length = v;
       refresh();
     }
+    // Menu de conexão do aparelho offline: escolhe Cabo RJ45 1,5 m, Wi-Fi ou PONTO ULTRA e liga no EMTA/ONT
+    function connectOptions(dev) {
+      const ultra = { k: 'ultra', icon: 'fa-ethernet', t: 'PONTO ULTRA', sub: `RJ45 em metros · ${ultraCost(dev)}`, cls: dev.type === 'soundbox' ? 'cm-free' : 'cm-cost' };
+      const patch = { k: 'patch', icon: 'fa-ethernet', t: 'Cabo RJ45 1,5 m', sub: 'porta LAN', cls: '' };
+      const wifi = { k: dev.type === 'soundbox' ? 'wifi-confirm' : 'wifi', icon: 'fa-wifi', t: 'Wi-Fi', sub: dev.type === 'soundbox' ? 'não recomendado' : '5 GHz · RSSI até −60 dBm', cls: dev.type === 'soundbox' ? 'cm-warn' : '' };
+      if (dev.type === 'soundbox') return [patch, ultra, wifi];
+      if (usesPatch(dev)) return [patch, wifi, ultra];
+      return [wifi, ultra];
+    }
+    function pickGateway(dev) {
+      const gws = nodes.filter(isGateway);
+      if (!gws.length) return { err: `Coloque ${isGpon() ? 'uma ONT' : 'um EMTA'} no projeto para conectar o ${dev.name}.` };
+      const ok = gws.filter(g => !isTvPoint(dev) || netCount(g.id) < NET_MAX_TV);
+      if (!ok.length) return { err: `${GW().A} aceita até ${NET_MAX_TV} pontos de TV.` };
+      return { gw: ok.find(g => ['ok', 'warn'].includes(statusOf(g))) || ok[0] };
+    }
+    function closeConnectMenu() { const m = document.getElementById('connect-menu'); if (m) m.remove(); }
+    function openConnectMenu(devId, anchor, step) {
+      closeConnectMenu();
+      const dev = byId(devId), cont = document.getElementById('canvas-container');
+      if (!dev || !cont) return;
+      const cr = cont.getBoundingClientRect();
+      const host = anchor || document.querySelector(`[data-node="${devId}"]`);
+      const r = host ? host.getBoundingClientRect() : { left: cr.left + 40, bottom: cr.top + 40 };
+      const m = document.createElement('div');
+      m.id = 'connect-menu';
+      m.onmousedown = e => e.stopPropagation();
+      m.onclick = e => e.stopPropagation();
+      m.innerHTML = step === 'wifi-confirm'
+        ? `<div class="cm-title"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> ${esc(dev.name)}</div>
+           <p class="cm-alert">Este produto deve usar cabo RJ45 obrigatoriamente. Deseja seguir por Wi-Fi?</p>
+           <div class="cm-row"><button class="cm-btn cm-sec" onclick="openConnectMenu('${esc(devId)}', null)">Usar cabo</button><button class="cm-btn cm-warnbtn" onclick="connectVia('${esc(devId)}', 'wifi', true)">Seguir por Wi-Fi</button></div>`
+        : `<div class="cm-title"><i class="fa-solid fa-plug"></i> Conectar ${esc(dev.name)} ${GW().na}</div>
+           ${connectOptions(dev).map(o => `<button class="cm-opt ${o.cls}" onclick="${o.k === 'wifi-confirm' ? `openConnectMenu('${esc(devId)}', null, 'wifi-confirm')` : `connectVia('${esc(devId)}', '${o.k}')`}"><i class="fa-solid ${o.icon}"></i><span><b>${o.t}</b><small>${o.sub}</small></span></button>`).join('')}`;
+      cont.appendChild(m);
+      const w = m.offsetWidth, h = m.offsetHeight;
+      m.style.left = Math.max(8, Math.min(cont.clientWidth - w - 8, r.left - cr.left)) + 'px';
+      m.style.top = Math.max(8, Math.min(cont.clientHeight - h - 8, r.bottom - cr.top + 6)) + 'px';
+      setTimeout(() => document.addEventListener('mousedown', closeConnectMenu, { once: true }), 0);
+    }
+    function connectVia(devId, kind, confirmed) {
+      closeConnectMenu();
+      const dev = byId(devId);
+      if (!dev) return;
+      const old = inputConn(dev.id);
+      if (old) connections = connections.filter(c => c !== old);   // reconectar: troca a ligação antiga
+      const pg = pickGateway(dev);
+      if (pg.err) { if (old) connections.push(old); showToast(pg.err, 'warning'); return; }
+      const gw = pg.gw;
+      if (kind === 'wifi') {
+        connectNet._ok = !!confirmed;
+        connectNet(gw, 'wifi', dev);
+        connectNet._ok = false;
+        return;
+      }
+      const lan = ONT_PORTS.find(x => x.id.startsWith('lan') && !portConn(gw.id, x.id));
+      if (!lan) { if (old) connections.push(old); showToast(`Não há porta LAN livre ${GW().na}. Use Wi-Fi ou libere uma porta.`, 'warning'); refresh(); return; }
+      if (kind === 'patch') {
+        const c = { id: uid('conn'), from: gw.id, fromPort: lan.id, to: dev.id, cableType: 'RJ45 1,5 m', length: PATCH_M };
+        connections.push(c);
+        selection.clear(); selectedNodeId = null; selectedConnectionId = c.id;
+        refresh();
+        showToast(`${dev.name} ligado com cabo RJ45 1,5 m na ${lan.label} ${GW().da}.`, 'success');
+        return;
+      }
+      // PONTO ULTRA: pede o comprimento
+      pendingConn = { from: gw.id, fromPort: lan.id, to: dev.id, cableType: 'RJ45' };
+      linkSource = null;
+      render();
+      openLengthPopup();
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('connect-menu')) { e.stopImmediatePropagation(); closeConnectMenu(); } }, true);
     function updateWifi(key, val) {
       const c = connById(selectedConnectionId);
       if (!c || c.cableType !== 'Wi-Fi') return;
@@ -3832,7 +3928,7 @@
     }
     function netLinkPanelHTML(c) {
       const ont = byId(c.from), dev = byId(c.to), ns = netState(dev);
-      const opts = [['Wi-Fi', 'Wi-Fi'], ...(usesPatch(dev) ? [['RJ45 1,5 m', 'Cabo RJ45 1,5 m']] : []), ['RJ45', 'PONTO ULTRA (RJ45 em metros)']];
+      const opts = [['Wi-Fi', 'Wi-Fi'], ...(allowsPatch(dev) ? [['RJ45 1,5 m', 'Cabo RJ45 1,5 m']] : []), ['RJ45', `PONTO ULTRA (RJ45 em metros) · ${ultraCost(dev)}`]];
       const X = `<button onclick="closePanel()" class="panel-close ml-1" title="Fechar o painel (P)"><i class="fa-solid fa-xmark"></i></button>`;
       return `
         <div class="space-y-3">
@@ -3848,7 +3944,7 @@
             </select>
           </div>
           ${c.cableType === 'RJ45' ? `<div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">PONTO ULTRA · comprimento (m) · conectores inclusos</label>
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">PONTO ULTRA · comprimento (m) · ${ultraCost(dev)}</label>
             <input type="number" min="1" max="${RJ45_MAX}" step="0.5" value="${esc(c.length)}" onchange="updateNetLength(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-slate-200 font-mono font-bold">
           </div>` : c.cableType === 'RJ45 1,5 m' ? `<p class="text-[11px] text-slate-400">Cabo RJ45 padrão de 1,5 m, conectores inclusos.</p>` : `<div class="grid grid-cols-2 gap-1.5">
               <label class="block"><span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Rede</span>
@@ -3868,7 +3964,7 @@
       let rjM = 0, rjN = 0, patches = 0, wifiN = 0;
       connections.forEach(c => { if (c.cableType === 'RJ45') { rjN++; rjM += Number(c.length || 0); } else if (c.cableType === 'RJ45 1,5 m') patches++; else if (c.cableType === 'Wi-Fi') wifiN++; });
       const card = (t, v) => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold">${t}</span><strong class="text-lg text-slate-100 font-mono">${v}</strong></div>`;
-      const list = nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) + (c.cableType === 'Wi-Fi' ? ' ' + (c.band === '2.4' ? '2,4' : '5') + ' GHz' + (sigVal(c.rssi) != null ? ' · RSSI ' + fmtDb(sigVal(c.rssi)) : '') : '') : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('');
+      const list = nodes.filter(isNetDev).map(n => { const ns = netState(n), c = inputConn(n.id); return `<div class="flex justify-between gap-2 border-b border-slate-800/70 py-0.5 text-xs"><span class="text-slate-300">${esc(n.name)} · ${c ? esc(gponCableLabel(c)) + (c.cableType === 'RJ45' ? ' · ' + ultraCost(n) : '') + (c.cableType === 'Wi-Fi' ? ' ' + (c.band === '2.4' ? '2,4' : '5') + ' GHz' + (sigVal(c.rssi) != null ? ' · RSSI ' + fmtDb(sigVal(c.rssi)) : '') : '') : 'não ligado'}</span><b class="${ns.st === 'on' ? 'text-emerald-400' : ns.st === 'warn' ? 'text-amber-400' : 'text-rose-400'}">${esc(ns.text)}</b></div>`; }).join('');
       return `<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">${card('PONTO ULTRA (RJ45)', rjM + 'm')}${card('RJ45 1,5 m', patches + ' un.')}${card('Conectores RJ45', 2 * (rjN + patches) + ' un.')}${card('Pontos por Wi-Fi', wifiN + ' un.')}</div>
         <div class="mt-3 bg-slate-950 p-3 rounded-xl border border-slate-800"><span class="text-[10px] text-slate-400 block font-semibold mb-1.5">Pontos de TV e dispositivos na rede</span>${list}</div>`;
     }
@@ -3879,6 +3975,7 @@
           <label class="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">${isTvPoint(n) ? 'Ponto de TV' : 'Dispositivo na rede'}</label>
           <div><span class="net-chip net-${ns.st}">● ${ns.text}</span></div>
           <p class="text-[11px] text-slate-400 leading-snug">${esc(ns.why)}</p>
+          ${ns.st === 'off' ? `<button onclick="openConnectMenu('${esc(n.id)}', this)" class="w-full py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-[11px] text-rose-200 font-bold"><i class="fa-solid fa-plug"></i> Conectar (cabo, Wi-Fi ou PONTO ULTRA)</button>` : ''}
           ${c ? `<button data-id="${esc(c.id)}" onclick="selectConnection(this.dataset.id)" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 font-semibold">Editar a ligação (${esc(gponCableLabel(c))})</button>` : ''}
           <p class="text-[10px] text-slate-500 leading-snug">${usesPatch(n) ? NET_DEV[n.type].label + ' via IP: Wi-Fi, cabo RJ45 1,5 m ou PONTO ULTRA (acima de 1,5 m).' : n.type === 'soundbox' ? 'Sound Box: de preferência PONTO ULTRA; Wi-Fi não recomendado.' : NET_DEV[n.type].label + ': Wi-Fi ou PONTO ULTRA (cabo de rede em metros).'} ${isTvPoint(n) ? 'Até ' + NET_MAX_TV + ' pontos de TV ' + GW().por + '.' : 'Dispositivo da rede do cliente.'} ${wifiRule()}</p>
         </div>`;
